@@ -1,0 +1,66 @@
+[tool.poetry]
+name = "my-backend"
+version = "0.1.0"
+description = "FastAPI backend template with asyncpg, Redis, S3, JWT auth"
+authors = ["Your Name <your@email.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+# Web framework
+fastapi = "^0.115"
+uvicorn = { version = "^0.34", extras = ["standard"] }
+gunicorn = "^23.0"
+# Database
+asyncpg = "^0.30"
+sqlalchemy = "^2.0"
+alembic = "^1.14"
+# Cache & sessions
+redis = "^5.2"
+# Auth
+pyjwt = { version = "^2.10", extras = ["crypto"] }
+passlib = { version = "^1.7", extras = ["argon2"] }
+argon2-cffi = "^23.1"
+# Validation
+pydantic = "^2.10"
+pydantic-settings = "^2.7"
+email-validator = "^2.2"
+# S3 storage
+aiobotocore = "^2.15"
+# HTTP client
+aiohttp = "^3.11"
+# Retry logic
+tenacity = "^9.0"
+# Monitoring
+prometheus-client = "^0.22"
+# Logging
+colorama = "^0.4"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11"
+pre-commit = "^4.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3"
+pytest-asyncio = "^0.25"
+httpx = "^0.28"
+fakeredis = "^2.26"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+exclude = [".env", ".git", "pg/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "C4", "C90"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
