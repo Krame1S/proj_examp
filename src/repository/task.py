@@ -19,15 +19,15 @@ class TaskRepository(BaseRepository):
             raise ValueError("Failed to create task")
         return result
 
-    # async def get_by_id(self, user_id: int) -> asyncpg.Record | None:
-    #     return await self.fetch_row(
-    #         """
-    #         SELECT id, email, is_active, created_at
-    #         FROM "user"
-    #         WHERE id = $1
-    #         """,
-    #         user_id,
-    #     )
+    async def list_all_tasks(self, user_id: int) -> list[asyncpg.Record] | None:
+        return await self.fetch_all(
+            """
+            SELECT id, title, description, owner_id, is_active, created_at, updated_at
+            FROM "task"
+            WHERE owner_id = $1
+            """,
+            user_id,
+        )
 
     # async def get_by_email(self, email: str) -> asyncpg.Record | None:
     #     return await self.fetch_row(

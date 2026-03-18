@@ -17,3 +17,11 @@ async def create_task(
 ) -> TaskOut:
     return await task_service.create_task(task_in, current_user_id)
 
+
+@router.get("/list", status_code=status.HTTP_200_OK)
+async def list_tasks(
+    task_service: Annotated[TaskService, Depends(get_task_service)],
+    current_user_id: Annotated[int, Depends(get_current_user_id)]
+) -> list[TaskOut]:
+    return await task_service.list_tasks(current_user_id)
+

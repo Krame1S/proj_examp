@@ -1,5 +1,3 @@
-from fastapi import HTTPException, status
-
 from src.repository.task import TaskRepository
 from src.schemas.task import TaskIn, TaskOut
 
@@ -21,3 +19,20 @@ class TaskService:
             owner_id=record["owner_id"],
             is_active=record["is_active"],
         )
+
+    
+    async def list_tasks(self, owner_id: int) -> list[TaskOut]:
+        records = await self.repository.list_all_tasks(owner_id)
+        if records is None:
+            return []
+        return [
+            TaskOut(
+                id=record["id"],
+                title=record["title"],
+                description=record["description"],
+                owner_id=record["owner_id"],
+                is_active=record["is_active"],
+            )
+            for record in records
+        ]
+
