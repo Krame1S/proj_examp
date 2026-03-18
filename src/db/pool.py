@@ -39,3 +39,8 @@ async def close_db_pool() -> None:
         await db_pool.close()
         db_pool = None
         logger.info("Database pool closed")
+
+
+def get_db_pool() -> asyncpg.Pool | None:
+    """Get the current database pool."""
+    return db_pool

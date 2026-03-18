@@ -17,7 +17,7 @@ class Settings(BaseSettings):
         return json.loads(self.CORS_ORIGINS)
 
     # ── PostgreSQL ───────────────────────────────────────
-    DATABASE_URL: str
+    DATABASE_URL: str = ""
     DATABASE_URL_SQLALCHEMY: str = ""
     DB_SCHEMA: str = "public"
     DB_MIN_POOL_SIZE: int = 5

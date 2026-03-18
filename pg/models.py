@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from src.core.config import settings
-from src.models import *  # noqa: F401, F403
 
 
 class Base(AsyncAttrs, DeclarativeBase):

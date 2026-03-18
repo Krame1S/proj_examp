@@ -5,7 +5,7 @@ from src.repository.base import BaseRepository
 
 class UserRepository(BaseRepository):
     async def create(self, email: str, password_hash: str) -> asyncpg.Record:
-        return await self.fetch_row(
+        result = await self.fetch_row(
             """
             INSERT INTO "user" (email, password_hash)
             VALUES ($1, $2)
@@ -14,6 +14,9 @@ class UserRepository(BaseRepository):
             email,
             password_hash,
         )
+        if result is None:
+            raise ValueError("Failed to create user")
+        return result
 
     async def get_by_id(self, user_id: int) -> asyncpg.Record | None:
         return await self.fetch_row(

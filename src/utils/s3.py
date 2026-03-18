@@ -13,7 +13,7 @@ _s3_retry = retry(
     retry=retry_if_exception_type((ClientError, EndpointConnectionError, OSError)),
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    before_sleep=lambda rs: logger.warning("S3 retry attempt %s after %s", rs.attempt_number, rs.outcome.exception()),
+    before_sleep=lambda rs: logger.warning("S3 retry attempt %s after %s", rs.attempt_number, rs.outcome.exception() if rs.outcome else "unknown"),
 )
 
 

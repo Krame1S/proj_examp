@@ -9,10 +9,13 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.core.security import decode_access_token
-from src.db.pool import db_pool
+from src.db.pool import get_db_pool
 from src.repository.user import UserRepository
+from src.repository.task import TaskRepository
 from src.service.auth import AuthService
 from src.service.user import UserService
+from src.service.task import TaskService
+from asyncpg.pool import PoolConnectionProxy
 
 security_scheme = HTTPBearer()
 
@@ -21,12 +24,15 @@ security_scheme = HTTPBearer()
 redis_client: redis.Redis | None = None
 
 
-async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
+async def get_db() -> AsyncGenerator[PoolConnectionProxy, None]:
+    db_pool = get_db_pool()
+    if db_pool is None:
+        raise RuntimeError("Database pool not initialized")
     async with db_pool.acquire() as conn:
         yield conn
 
 
-def get_redis() -> redis.Redis:
+def get_redis() -> redis.Redis | None:
     return redis_client
 
 
@@ -47,6 +53,11 @@ async def get_user_repository(
 ) -> UserRepository:
     return UserRepository(conn)
 
+async def get_task_repository(
+    conn: Annotated[asyncpg.Connection, Depends(get_db)]
+) -> TaskRepository:
+    return TaskRepository(conn)
+
 
 # ── Service dependencies ─────────────────────────────────
 
@@ -55,10 +66,15 @@ async def get_auth_service(
     repo: Annotated[UserRepository, Depends(get_user_repository)],
     redis_conn: Annotated[redis.Redis, Depends(get_redis)],
 ) -> AuthService:
-    return AuthService(repository=repo, redis_client=redis_conn)
+    return AuthService(repo, redis_conn)
 
 
 async def get_user_service(
     repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> UserService:
     return UserService(repo)
+
+async def get_task_service(
+    repo: Annotated[TaskRepository, Depends(get_task_repository)]
+) -> TaskService:
+    return TaskService(repo)

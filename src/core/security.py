@@ -19,10 +19,13 @@ _public_key: str | None = None
 
 def load_keys() -> None:
     global _private_key, _public_key
-    with open(settings.JWT_PRIVATE_KEY_PATH) as f:
-        _private_key = f.read()
-    with open(settings.JWT_PUBLIC_KEY_PATH) as f:
-        _public_key = f.read()
+    try:
+        with open(settings.JWT_PRIVATE_KEY_PATH) as f:
+            _private_key = f.read()
+        with open(settings.JWT_PUBLIC_KEY_PATH) as f:
+            _public_key = f.read()
+    except Exception as e:
+        raise RuntimeError("Failed to load JWT keys") from e
 
 
 # ── Password hashing (Argon2) ───────────────────────────
@@ -46,6 +49,8 @@ def verify_password(password: str, hashed: str) -> bool:
 
 
 def create_access_token(user_id: int) -> str:
+    if _private_key is None:
+        raise RuntimeError("JWT private key not loaded")
     now = dt.datetime.now(dt.UTC)
     payload = {
         "sub": str(user_id),
@@ -58,6 +63,8 @@ def create_access_token(user_id: int) -> str:
 
 
 def create_refresh_token(user_id: int) -> str:
+    if _private_key is None:
+        raise RuntimeError("JWT private key not loaded")
     now = dt.datetime.now(dt.UTC)
     payload = {
         "sub": str(user_id),
@@ -71,6 +78,8 @@ def create_refresh_token(user_id: int) -> str:
 
 def decode_access_token(token: str) -> int:
     """Decode access token and return user_id. Raises HTTPException on failure."""
+    if _public_key is None:
+        raise RuntimeError("JWT public key not loaded")
     try:
         payload = jwt.decode(token, _public_key, algorithms=[settings.JWT_ALGORITHM])
     except jwt.ExpiredSignatureError as e:
@@ -86,6 +95,8 @@ def decode_access_token(token: str) -> int:
 
 async def decode_refresh_token(token: str, redis_client: redis.Redis) -> int:
     """Decode refresh token, verify it exists in Redis, and revoke it (single-use)."""
+    if _public_key is None:
+        raise RuntimeError("JWT public key not loaded")
     try:
         payload = jwt.decode(token, _public_key, algorithms=[settings.JWT_ALGORITHM])
     except jwt.ExpiredSignatureError as e:
@@ -110,6 +121,8 @@ async def decode_refresh_token(token: str, redis_client: redis.Redis) -> int:
 
 async def store_refresh_token(user_id: int, token: str, redis_client: redis.Redis) -> None:
     """Store refresh token JTI in Redis with TTL."""
+    if _public_key is None:
+        raise RuntimeError("JWT public key not loaded")
     payload = jwt.decode(token, _public_key, algorithms=[settings.JWT_ALGORITHM])
     jti = payload["jti"]
     key = f"user:{user_id}:refresh:{jti}"
