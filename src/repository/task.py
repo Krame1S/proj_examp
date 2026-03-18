@@ -29,35 +29,34 @@ class TaskRepository(BaseRepository):
             user_id,
         )
 
-    # async def get_by_email(self, email: str) -> asyncpg.Record | None:
-    #     return await self.fetch_row(
-    #         """
-    #         SELECT id, email, password_hash, is_active, created_at
-    #         FROM "user"
-    #         WHERE email = $1
-    #         """,
-    #         email,
-    #     )
+    async def get_task_by_id(self, task_id: int) -> asyncpg.Record | None:
+        return await self.fetch_row(
+            """
+            SELECT id, title, description, owner_id, is_active, created_at, updated_at
+            FROM task
+            WHERE id = $1
+            """,
+            task_id
+        )
 
-    # async def update_email(self, user_id: int, email: str) -> asyncpg.Record | None:
-    #     return await self.fetch_row(
-    #         """
-    #         UPDATE "user"
-    #         SET email = $2, updated_at = NOW()
-    #         WHERE id = $1
-    #         RETURNING id, email, is_active, created_at
-    #         """,
-    #         user_id,
-    #         email,
-    #     )
 
-    # async def delete(self, user_id: int) -> bool:
-    #     result = await self.execute(
-    #         """
-    #         DELETE FROM "user"
-    #         WHERE id = $1
-    #         """,
-    #         user_id,
-    #     )
-    #     return result == "DELETE 1"
+    async def patch_task(
+        self,
+        task_id: int,
+        title: str,
+        description: str,
+        is_active: bool
+    ) -> asyncpg.Record | None:
+        return await self.fetch_row(
+            """
+            UPDATE task
+            SET title       = $1,
+                description = $2,
+                is_active   = $3,
+                updated_at  = NOW()
+            WHERE id = $4
+        RETURNING id, title, description, owner_id, is_active, created_at, updated_at
+            """,
+            title, description, is_active, task_id
+        )
 
