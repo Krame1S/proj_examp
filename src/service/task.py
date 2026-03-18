@@ -97,3 +97,15 @@ class TaskService:
             for record in records
         ]
 
+    async def delete_task(
+        self,
+        task_id: int,
+        user_id: int
+    ) -> None:
+        task = await self.repository.get_task_by_id(task_id)
+        if not task:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Task not found")
+        if task["owner_id"] != user_id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Not your task")
+
+        await self.repository.delete_task(task_id)

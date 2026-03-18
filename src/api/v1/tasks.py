@@ -39,3 +39,10 @@ async def patch_task(
         user_id=current_user_id
     )
 
+@router.delete("/delete/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(
+    task_id: Annotated[int, Path(ge=1)],
+    task_service: Annotated[TaskService, Depends(get_task_service)],
+    current_user_id: Annotated[int, Depends(get_current_user_id)]
+) -> None:
+    return await task_service.delete_task(task_id, current_user_id)

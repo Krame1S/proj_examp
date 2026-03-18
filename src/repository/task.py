@@ -60,3 +60,12 @@ class TaskRepository(BaseRepository):
             title, description, is_active, task_id
         )
 
+    async def delete_task(self, task_id: int) -> bool:
+        result = await self.execute(
+            """
+            DELETE FROM task
+            WHERE id = $1
+            """,
+            task_id,
+        )
+        return result == "DELETE 1"
