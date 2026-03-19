@@ -12,6 +12,12 @@ from src.core.security import (
     store_refresh_token,
     verify_password,
 )
+from src.exceptions.auth import (
+    EmailAlreadyRegistered,
+    InvalidCredentials,
+    AccountDeactivated,
+    InvalidRefreshToken,
+)
 from src.repository.user import UserRepository
 from src.schemas.auth import SignInRequest, SignUpRequest, TokenPair
 
@@ -29,7 +35,7 @@ class AuthService:
         try:
             user = await self.repository.create(request.email, hashed)
         except UniqueViolationError as e:
-            raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered") from e
+            raise EmailAlreadyRegistered(detail={"email": request.email})
 
         access = create_access_token(user["id"])
         refresh = create_refresh_token(user["id"])
@@ -40,13 +46,13 @@ class AuthService:
     async def sign_in(self, request: SignInRequest) -> TokenPair:
         user = await self.repository.get_by_email(request.email)
         if not user:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
+            raise InvalidCredentials()
 
         if not verify_password(request.password, user["password_hash"]):
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
+            raise InvalidCredentials()
 
         if not user["is_active"]:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Account is deactivated")
+            raise AccountDeactivated()
 
         access = create_access_token(user["id"])
         refresh = create_refresh_token(user["id"])
@@ -55,10 +61,14 @@ class AuthService:
         return TokenPair(access_token=access, refresh_token=refresh)
 
     async def refresh(self, refresh_token: str) -> TokenPair:
-        user_id = await decode_refresh_token(refresh_token, self.redis)
+            try:
+                user_id = await decode_refresh_token(refresh_token, self.redis)
+            except Exception as e:
+                logger.warning("Refresh token decode failed", exc_info=True)
+                raise InvalidRefreshToken() from e
 
-        access = create_access_token(user_id)
-        refresh = create_refresh_token(user_id)
-        await store_refresh_token(user_id, refresh, self.redis)
+            access = create_access_token(user_id)
+            refresh = create_refresh_token(user_id)
+            await store_refresh_token(user_id, refresh, self.redis)
 
-        return TokenPair(access_token=access, refresh_token=refresh)
+            return TokenPair(access_token=access, refresh_token=refresh)
