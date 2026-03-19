@@ -26,7 +26,6 @@ class TaskService:
             updated_at=str(record["updated_at"]),
         )
 
-
     async def patch_task(
         self,
         task_id: int,
@@ -43,7 +42,6 @@ class TaskService:
         # Only build what we actually want to change
         update_map = update_data.model_dump(exclude_unset=True)
         if not update_map:
-            # Nothing to update → return current state
             return TaskOut(
                 id=task["id"],
                 title=task["title"],
@@ -54,10 +52,9 @@ class TaskService:
                 updated_at=task["updated_at"].isoformat() if task["updated_at"] else None,
             )
 
-        # Apply updates (fallback to current value if not sent)
-        new_title       = update_map.get("title",       task["title"])
-        new_desc        = update_map.get("description", task["description"])
-        new_active      = update_map.get("is_active",   task["is_active"])
+        new_title = update_map.get("title", task["title"])
+        new_desc = update_map.get("description", task["description"])
+        new_active = update_map.get("is_active", task["is_active"])
 
         updated = await self.repository.patch_task(
             task_id,
@@ -74,11 +71,10 @@ class TaskService:
             title=updated["title"],
             description=updated["description"],
             owner_id=updated["owner_id"],
-            is_active=updated["is_active"],           # ← already bool
+            is_active=updated["is_active"],
             created_at=updated["created_at"].isoformat() if updated["created_at"] else None,
             updated_at=updated["updated_at"].isoformat() if updated["updated_at"] else None,
         )
-
 
     async def list_tasks(self, owner_id: int) -> list[TaskOut]:
         records = await self.repository.list_all_tasks(owner_id)
