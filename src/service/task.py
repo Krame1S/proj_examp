@@ -39,24 +39,15 @@ class TaskService:
     ) -> TaskOut:
         task = await self._get_task_or_raise(task_id, user_id)
 
-        if task["owner_id"] != user_id:
-            raise TaskNotOwned()
-
         changes = update_data.model_dump(exclude_unset=True)
         if not changes:
             return TaskOut.from_db_row(task)
 
-        new_values = {
-            "title": changes.get("title", task["title"]),
-            "description": changes.get("description", task["description"]),
-            "is_active": changes.get("is_active", task["is_active"]),
-        }
-
         updated = await self.repository.patch_task(
             task_id=task_id,
-            title=new_values["title"],
-            description=new_values["description"],
-            is_active=new_values["is_active"],
+            title=changes.get("title", task["title"]),
+            description=changes.get("description", task["description"]),
+            is_active=changes.get("is_active", task["is_active"]),
         )
 
         if updated is None:
@@ -66,9 +57,6 @@ class TaskService:
 
     async def delete_task(self, task_id: int, user_id: int) -> None:
         task = await self._get_task_or_raise(task_id,  user_id)
-
-        if task["owner_id"] != user_id:
-            raise TaskNotOwned()
 
         deleted = await self.repository.delete_task(task_id)
         if not deleted:

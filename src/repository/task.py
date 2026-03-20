@@ -26,7 +26,7 @@ class TaskRepository(BaseRepository):
             raise RuntimeError("Task creation failed - no row returned")
         return dict(record)
 
-    async def get_task_by_id(self, task_id: int, owner_id: int | None = None) -> Optional[Dict[str, Any]]:
+    async def get_task_by_id(self, task_id: int, owner_id: int) -> Optional[Dict[str, Any]]:
         record = await self.fetch_row(
             """
             SELECT id, title, description, owner_id, is_active, created_at, updated_at
