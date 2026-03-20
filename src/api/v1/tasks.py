@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Path, status
+from fastapi import APIRouter, Body, Depends, Path, Query, status
 
 from src.api.deps import get_current_user_id, get_task_service
 from src.schemas.task import TaskIn, TaskOut, TaskUpdate
@@ -25,6 +25,13 @@ async def list_tasks(
 ) -> list[TaskOut]:
     return await task_service.list_tasks(current_user_id)
 
+@router.get("/{task_id}", status_code=status.HTTP_200_OK)
+async def get_task_by_id(
+    task_id: Annotated[int, Path()],
+    task_service: Annotated[TaskService, Depends(get_task_service)],
+    current_user_id: Annotated[int, Depends(get_current_user_id)]
+) -> TaskOut:
+    return await task_service.get_task_by_id(current_user_id, task_id)
 
 @router.patch("/{task_id}", status_code=status.HTTP_200_OK)
 async def patch_task(
