@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 
+from src.api.errors import register_error_handlers
+
 from src.api import deps
 from src.api.v1.router import v1_router
 from src.core.config import settings
@@ -38,6 +40,8 @@ app = FastAPI(
     title=settings.APP_NAME,
     lifespan=lifespan,
 )
+
+register_error_handlers(app)
 
 # ── Middleware (order matters: last added = first executed) ───
 
