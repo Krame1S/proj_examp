@@ -26,6 +26,7 @@ class TaskRepository(BaseRepository):
             raise RuntimeError("Task creation failed - no row returned")
         return dict(record)
 
+
     async def get_task_by_id(self, task_id: int, owner_id: int) -> Optional[Dict[str, Any]]:
         record = await self.fetch_row(
             """
@@ -38,17 +39,22 @@ class TaskRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def list_all_tasks(self, owner_id: int) -> List[Dict[str, Any]]:
+
+    async def list_all_tasks(self, owner_id: int, skip: int = 0, limit: int = 20) -> List[Dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT id, title, description, owner_id, is_active, created_at, updated_at
             FROM task
             WHERE owner_id = $1
             ORDER BY created_at DESC
+            OFFSET $2 LIMIT $3
             """,
             owner_id,
+            skip,
+            limit,
         )
         return [dict(r) for r in records]
+
 
     async def patch_task(
         self,
@@ -67,6 +73,7 @@ class TaskRepository(BaseRepository):
             title, description, is_active, task_id
         )
         return dict(record) if record is not None else None
+
 
     async def delete_task(self, task_id: int) -> bool:
         result = await self.execute(
