@@ -43,6 +43,7 @@ asyncpg-stubs = "^0.31.2"
 types-passlib = "^1.7.7.20260211"
 types-colorama = "^0.4.15.20250801"
 types-aiobotocore = "^3.2.1"
+types-python-jose = "^3.5.0.20250531"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3"
