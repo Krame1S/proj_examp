@@ -1,11 +1,10 @@
-import asyncpg
-
+from typing import Any, Dict, Optional
 from src.repository.base import BaseRepository
 
 
 class UserRepository(BaseRepository):
-    async def create(self, email: str, password_hash: str) -> asyncpg.Record:
-        result = await self.fetch_row(
+    async def create(self, email: str, password_hash: str) -> Dict[str, Any]:
+        record = await self.fetch_row(
             """
             INSERT INTO "user" (email, password_hash)
             VALUES ($1, $2)
@@ -14,12 +13,12 @@ class UserRepository(BaseRepository):
             email,
             password_hash,
         )
-        if result is None:
-            raise ValueError("Failed to create user")
-        return result
+        if record is None:
+            raise RuntimeError("User creation failed - no row returned")
+        return dict(record)
 
-    async def get_by_id(self, user_id: int) -> asyncpg.Record | None:
-        return await self.fetch_row(
+    async def get_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+        record = await self.fetch_row(
             """
             SELECT id, email, is_active, created_at
             FROM "user"
@@ -27,9 +26,10 @@ class UserRepository(BaseRepository):
             """,
             user_id,
         )
+        return dict(record) if record is not None else None
 
-    async def get_by_email(self, email: str) -> asyncpg.Record | None:
-        return await self.fetch_row(
+    async def get_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        record = await self.fetch_row(
             """
             SELECT id, email, password_hash, is_active, created_at
             FROM "user"
@@ -37,9 +37,10 @@ class UserRepository(BaseRepository):
             """,
             email,
         )
+        return dict(record) if record is not None else None
 
-    async def update_email(self, user_id: int, email: str) -> asyncpg.Record | None:
-        return await self.fetch_row(
+    async def update_email(self, user_id: int, email: str) -> Optional[Dict[str, Any]]:
+        record = await self.fetch_row(
             """
             UPDATE "user"
             SET email = $2, updated_at = NOW()
@@ -49,6 +50,7 @@ class UserRepository(BaseRepository):
             user_id,
             email,
         )
+        return dict(record) if record is not None else None
 
     async def delete(self, user_id: int) -> bool:
         result = await self.execute(

@@ -1,5 +1,4 @@
-from fastapi import HTTPException, status
-
+from src.exceptions.user import UserNotFound
 from src.repository.user import UserRepository
 from src.schemas.user import UserProfile
 
@@ -8,19 +7,26 @@ class UserService:
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
-    async def get_profile(self, user_id: int) -> UserProfile:
+    async def _get_user_or_raise(self, user_id: int) -> dict:
         user = await self.repository.get_by_id(user_id)
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
-        return UserProfile(**dict(user))
+        if user is None:
+            raise UserNotFound()
+        return user
+
+    async def get_profile(self, user_id: int) -> UserProfile:
+        user = await self._get_user_or_raise(user_id)
+        return UserProfile.from_db_row(user)
 
     async def update_email(self, user_id: int, email: str) -> UserProfile:
-        user = await self.repository.update_email(user_id, email)
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
-        return UserProfile(**dict(user))
+        updated = await self.repository.update_email(user_id, email)
+        if updated is None:
+            raise UserNotFound()
+        return UserProfile.from_db_row(updated)
 
     async def delete(self, user_id: int) -> None:
+        user_exists = await self.repository.get_by_id(user_id)
+        if user_exists is None:
+            raise UserNotFound()
         deleted = await self.repository.delete(user_id)
         if not deleted:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+            raise UserNotFound("User was already deleted")
