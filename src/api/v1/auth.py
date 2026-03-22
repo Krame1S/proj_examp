@@ -19,7 +19,7 @@ async def sign_up(
 
 @router.post("/sign-in")
 async def sign_in(
-    request: SignInRequest,
+    request: Annotated[SignInRequest, Body()],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> TokenPair:
     return await auth_service.sign_in(request)
