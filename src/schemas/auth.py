@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 
 class SignUpRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8)
+    password: str = Field(..., min_length=8)
     password_confirm: str
 
     @model_validator(mode="after")
