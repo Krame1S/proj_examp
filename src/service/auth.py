@@ -35,13 +35,14 @@ class AuthService:
         try:
             user = await self.repository.create(request.email, hashed)
         except UniqueViolationError as e:
-            raise EmailAlreadyRegistered(detail={"email": request.email})
+            raise EmailAlreadyRegistered() from e
 
         access = create_access_token(user["id"])
         refresh = create_refresh_token(user["id"])
         await store_refresh_token(user["id"], refresh, self.redis)
 
         return TokenPair(access_token=access, refresh_token=refresh)
+
 
     async def sign_in(self, request: SignInRequest) -> TokenPair:
         user = await self.repository.get_by_email(request.email)
@@ -60,15 +61,16 @@ class AuthService:
 
         return TokenPair(access_token=access, refresh_token=refresh)
 
+
     async def refresh(self, refresh_token: str) -> TokenPair:
-            try:
-                user_id = await decode_refresh_token(refresh_token, self.redis)
-            except Exception as e:
-                logger.warning("Refresh token decode failed", exc_info=True)
-                raise InvalidRefreshToken() from e
+        try:
+            user_id = await decode_refresh_token(refresh_token, self.redis)
+        except Exception as e:
+            logger.warning("Invalid refresh token attempt", exc_info=True)
+            raise InvalidRefreshToken() from e
 
-            access = create_access_token(user_id)
-            refresh = create_refresh_token(user_id)
-            await store_refresh_token(user_id, refresh, self.redis)
+        access = create_access_token(user_id)
+        refresh = create_refresh_token(user_id)
+        await store_refresh_token(user_id, refresh, self.redis)
 
-            return TokenPair(access_token=access, refresh_token=refresh)
+        return TokenPair(access_token=access, refresh_token=refresh)
