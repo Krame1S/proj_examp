@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import status
 
@@ -8,7 +8,8 @@ from fastapi import status
 class ErrorPayload:
     code: str
     message: str
-    detail: Any | None = None
+    detail: Optional[Any] = None
+    request_id: Optional[str] = None
 
 
 class AppException(Exception):
@@ -23,20 +24,21 @@ class AppException(Exception):
 
     def __init__(
         self,
-        message: str | None = None,
-        detail: Any | None = None,
-        status_code: int | None = None,
-        error_code: str | None = None,
+        message: Optional[str] = None,
+        detail: Optional[Any] = None,
+        status_code: Optional[int] = None,
+        error_code: Optional[str] = None,
     ):
         self.message = message or self.default_message
         self.detail = detail
         self.status_code = status_code or self.status_code
         self.error_code = error_code or self.error_code
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, request_id: Optional[str] = None) -> Dict[str, Any]:
         payload = ErrorPayload(
             code=self.error_code,
             message=self.message,
             detail=self.detail,
+            request_id=request_id,
         )
         return {"error": payload.__dict__}
