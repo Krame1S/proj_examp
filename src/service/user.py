@@ -1,6 +1,8 @@
 from src.exceptions.user import UserNotFound
 from src.repository.user import UserRepository
 from src.schemas.user import UserProfile
+from asyncpg.exceptions import UniqueViolationError
+from src.exceptions.user import EmailAlreadyTaken
 
 
 class UserService:
@@ -13,15 +15,21 @@ class UserService:
             raise UserNotFound()
         return user
 
+
     async def get_profile(self, user_id: int) -> UserProfile:
         user = await self._get_user_or_raise(user_id)
         return UserProfile.from_db_row(user)
 
+
     async def update_email(self, user_id: int, email: str) -> UserProfile:
-        updated = await self.repository.update_email(user_id, email)
+        try:
+            updated = await self.repository.update_email(user_id, email)
+        except UniqueViolationError:
+            raise EmailAlreadyTaken()
         if updated is None:
             raise UserNotFound()
         return UserProfile.from_db_row(updated)
+
 
     async def delete(self, user_id: int) -> None:
         user_exists = await self.repository.get_by_id(user_id)
