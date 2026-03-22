@@ -34,7 +34,7 @@ async def list_tasks(
 
 @router.get("/{task_id}", status_code=status.HTTP_200_OK)
 async def get_task_by_id(
-    task_id: Annotated[int, Path()],
+    task_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     current_user_id: Annotated[int, Depends(get_current_user_id)]
 ) -> TaskOut:
@@ -43,7 +43,7 @@ async def get_task_by_id(
 
 @router.patch("/{task_id}", status_code=status.HTTP_200_OK)
 async def patch_task(
-    task_id: Annotated[int, Path(ge=1)],
+    task_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     update_data: Annotated[TaskUpdate, Body()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     current_user_id: Annotated[int, Depends(get_current_user_id)]
@@ -57,7 +57,7 @@ async def patch_task(
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
-    task_id: Annotated[int, Path(ge=1)],
+    task_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     current_user_id: Annotated[int, Depends(get_current_user_id)]
 ) -> None:
