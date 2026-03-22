@@ -32,9 +32,6 @@ class UserService:
 
 
     async def delete(self, user_id: int) -> None:
-        user_exists = await self.repository.get_by_id(user_id)
-        if user_exists is None:
-            raise UserNotFound()
         deleted = await self.repository.delete(user_id)
         if not deleted:
-            raise UserNotFound("User was already deleted")
+            raise UserNotFound()
