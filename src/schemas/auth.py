@@ -2,9 +2,9 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class SignUpRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(...)
     password: str = Field(..., min_length=8)
-    password_confirm: str
+    password_confirm: str = Field(...)
 
     @model_validator(mode="after")
     def passwords_match(self):
@@ -14,8 +14,8 @@ class SignUpRequest(BaseModel):
 
 
 class SignInRequest(BaseModel):
-    email: EmailStr
-    password: str
+    email: EmailStr = Field(...)
+    password: str = Field(...)
 
 
 class TokenPair(BaseModel):
