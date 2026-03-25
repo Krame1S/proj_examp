@@ -29,27 +29,37 @@ class TaskRepository(BaseRepository):
             raise RuntimeError("Task creation failed - no row returned")
         return dict(record)
 
+
     async def get_task_by_id(self, task_id: int, owner_id: int) -> Optional[Dict[str, Any]]:
         record = await self.fetch_row(
             """
-            SELECT id, title, description, owner_id, category_id, is_active, created_at, updated_at
-            FROM task
-            WHERE id = $1 AND owner_id = $2
+            SELECT 
+                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active,
+                t.created_at, t.updated_at,
+                c.name AS category_name
+            FROM task t
+            LEFT JOIN category c ON t.category_id = c.id
+            WHERE t.id = $1 AND t.owner_id = $2
             """,
             task_id,
             owner_id,
         )
         return dict(record) if record is not None else None
 
+
     async def list_all_tasks(
         self, owner_id: int, skip: int = 0, limit: int = 20
     ) -> List[Dict[str, Any]]:
         records = await self.fetch_all(
             """
-            SELECT id, title, description, owner_id, category_id, is_active, created_at, updated_at
-            FROM task
-            WHERE owner_id = $1
-            ORDER BY created_at DESC
+            SELECT 
+                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active,
+                t.created_at, t.updated_at,
+                c.name AS category_name
+            FROM task t
+            LEFT JOIN category c ON t.category_id = c.id
+            WHERE t.owner_id = $1
+            ORDER BY t.created_at DESC
             OFFSET $2 LIMIT $3
             """,
             owner_id,
@@ -57,6 +67,7 @@ class TaskRepository(BaseRepository):
             limit,
         )
         return [dict(r) for r in records]
+
 
     async def patch_task(
         self,
@@ -68,15 +79,20 @@ class TaskRepository(BaseRepository):
     ) -> Optional[Dict[str, Any]]:
         record = await self.fetch_row(
             """
-            UPDATE task
+            UPDATE task t
             SET 
-                title       = COALESCE($1, title),
-                description = COALESCE($2, description),
-                is_active   = COALESCE($3, is_active),
-                category_id = COALESCE($4, category_id),
-                updated_at  = NOW()
-            WHERE id = $5
-            RETURNING id, title, description, owner_id, category_id, is_active, created_at, updated_at
+                title = COALESCE($1, t.title),
+                description = COALESCE($2, t.description),
+                is_active = COALESCE($3, t.is_active),
+                category_id = COALESCE($4, t.category_id),
+                updated_at = NOW()
+            FROM task t2
+            LEFT JOIN category c ON t2.category_id = c.id
+            WHERE t.id = $5
+            RETURNING 
+                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active, 
+                t.created_at, t.updated_at,
+                c.name AS category_name
             """,
             title,
             description,
@@ -85,6 +101,7 @@ class TaskRepository(BaseRepository):
             task_id,
         )
         return dict(record) if record is not None else None
+
 
     async def delete_task(self, task_id: int) -> bool:
         result = await self.execute(
