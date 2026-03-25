@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -7,12 +6,14 @@ from pydantic import BaseModel, Field
 class TaskIn(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: str = Field(..., max_length=4000)
+    category_id: Optional[int] = Field(None, ge=1)
 
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None, max_length=4000)
     is_active: Optional[bool] = None
+    category_id: Optional[int] = Field(None, ge=1)
 
 
 class TaskOut(BaseModel):
@@ -20,6 +21,7 @@ class TaskOut(BaseModel):
     title: str
     description: str
     owner_id: int
+    category_id: Optional[int] = None
     is_active: bool
     created_at: Optional[str]
     updated_at: Optional[str]
@@ -31,6 +33,7 @@ class TaskOut(BaseModel):
             title=row["title"],
             description=row["description"],
             owner_id=row["owner_id"],
+            category_id=row["category_id"],
             is_active=bool(row["is_active"]),
             created_at=row["created_at"].isoformat() if row["created_at"] else None,
             updated_at=row["updated_at"].isoformat() if row["updated_at"] else None,
