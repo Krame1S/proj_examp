@@ -82,9 +82,13 @@ async def get_user_service(
     return UserService(repo)
 
 async def get_task_service(
-    repo: Annotated[TaskRepository, Depends(get_task_repository)]
+    task_repo: Annotated[TaskRepository, Depends(get_task_repository)],
+    category_repo: Annotated[CategoryRepository, Depends(get_category_repository)],
 ) -> TaskService:
-    return TaskService(repo)
+    return TaskService(
+        task_repository=task_repo,
+        category_repository=category_repo,
+    )
 
 async def get_category_service(
     repo: Annotated[CategoryRepository, Depends(get_category_repository)]
