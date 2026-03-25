@@ -16,6 +16,8 @@ from src.service.auth import AuthService
 from src.service.user import UserService
 from src.service.task import TaskService
 from asyncpg.pool import PoolConnectionProxy
+from src.repository.category import CategoryRepository
+from src.service.category import CategoryService
 
 security_scheme = HTTPBearer()
 
@@ -58,6 +60,11 @@ async def get_task_repository(
 ) -> TaskRepository:
     return TaskRepository(conn)
 
+async def get_category_repository(
+    conn: Annotated[asyncpg.Connection, Depends(get_db)]
+) -> CategoryRepository:
+    return CategoryRepository(conn)
+
 
 # ── Service dependencies ─────────────────────────────────
 
@@ -78,3 +85,8 @@ async def get_task_service(
     repo: Annotated[TaskRepository, Depends(get_task_repository)]
 ) -> TaskService:
     return TaskService(repo)
+
+async def get_category_service(
+    repo: Annotated[CategoryRepository, Depends(get_category_repository)]
+) -> CategoryService:
+    return CategoryService(repo)
