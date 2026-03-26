@@ -13,21 +13,34 @@ class TaskRepository(BaseRepository):
         description: str,
         owner_id: int,
         category_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         record = await self.fetch_row(
             """
-            INSERT INTO task (title, description, owner_id, category_id)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id, title, description, owner_id, category_id, is_active, created_at, updated_at
+            WITH inserted_task AS (
+                INSERT INTO task (title, description, owner_id, category_id)
+                VALUES ($1, $2, $3, $4)
+                RETURNING id, title, description, owner_id, category_id, is_active, created_at, updated_at
+            )
+            SELECT 
+                t.id, 
+                t.title, 
+                t.description, 
+                t.owner_id, 
+                t.category_id, 
+                t.is_active,
+                t.created_at, 
+                t.updated_at,
+                c.name AS category_name
+            FROM inserted_task t
+            LEFT JOIN category c ON t.category_id = c.id
             """,
             title,
             description,
             owner_id,
             category_id,
         )
-        if record is None:
-            raise RuntimeError("Task creation failed - no row returned")
-        return dict(record)
+        
+        return dict(record) if record is not None else None
 
 
     async def get_task_by_id(self, task_id: int, owner_id: int) -> Optional[Dict[str, Any]]:

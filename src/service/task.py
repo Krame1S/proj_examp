@@ -40,6 +40,10 @@ class TaskService:
             owner_id=owner_id,
             category_id=task_in.category_id,
         )
+        
+        if record is None:
+            raise RuntimeError("Task creation failed - unexpected error")
+        
         return TaskOut.from_db_row(record)
 
 
