@@ -24,6 +24,7 @@ class CategoryRepository(BaseRepository):
             raise RuntimeError("Category creation failed - no row returned")
         return dict(record)
 
+
     async def get_by_id(self, category_id: int, user_id: int) -> Optional[Dict[str, Any]]:
         """Возвращает категорию ТОЛЬКО если она принадлежит пользователю"""
         record = await self.fetch_row(
@@ -36,6 +37,7 @@ class CategoryRepository(BaseRepository):
             user_id,
         )
         return dict(record) if record is not None else None
+
 
     async def get_by_name(self, name: str, user_id: int) -> Optional[Dict[str, Any]]:
         """Проверяет существование категории с таким именем у конкретного пользователя"""
@@ -50,17 +52,35 @@ class CategoryRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def list_by_user(self, user_id: int) -> List[Dict[str, Any]]:
+
+    async def list_by_user_with_count(self, user_id: int) -> List[Dict[str, Any]]:
         records = await self.fetch_all(
             """
-            SELECT id, name, description, created_by, created_at, updated_at
-            FROM category
-            WHERE created_by = $1
-            ORDER BY name ASC
+            WITH category_task_count AS (
+                SELECT 
+                    category_id,
+                    COUNT(*) as task_count
+                FROM task
+                WHERE owner_id = $1
+                GROUP BY category_id
+            )
+            SELECT 
+                c.id, 
+                c.name, 
+                c.description, 
+                c.created_by, 
+                c.created_at, 
+                c.updated_at,
+                COALESCE(ctc.task_count, 0) AS task_count
+            FROM category c
+            LEFT JOIN category_task_count ctc ON c.id = ctc.category_id
+            WHERE c.created_by = $1
+            ORDER BY c.name ASC
             """,
             user_id,
         )
         return [dict(r) for r in records]
+
 
     async def update(
         self,
@@ -83,6 +103,7 @@ class CategoryRepository(BaseRepository):
             description,
         )
         return dict(record) if record is not None else None
+
 
     async def delete(self, category_id: int) -> bool:
         result = await self.execute(

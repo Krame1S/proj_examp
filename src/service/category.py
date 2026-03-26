@@ -7,8 +7,8 @@ class CategoryService:
     def __init__(self, repository: CategoryRepository):
         self.repository = repository
 
+
     async def create(self, category_in: CategoryCreate, user_id: int) -> CategoryOut:
-        # Проверяем уникальность имени у этого пользователя
         existing = await self.repository.get_by_name(category_in.name, user_id)
         if existing:
             raise CategoryAlreadyExists()
@@ -20,15 +20,18 @@ class CategoryService:
         )
         return CategoryOut.from_db_row(record)
 
+
     async def get_by_id(self, category_id: int, user_id: int) -> CategoryOut:
         category = await self.repository.get_by_id(category_id, user_id)
         if category is None:
             raise CategoryNotFound()
         return CategoryOut.from_db_row(category)
 
+
     async def list_by_user(self, user_id: int) -> list[CategoryOut]:
-        records = await self.repository.list_by_user(user_id)
+        records = await self.repository.list_by_user_with_count(user_id)
         return [CategoryOut.from_db_row(r) for r in records]
+
 
     async def update(
         self,
@@ -36,7 +39,6 @@ class CategoryService:
         category_update: CategoryUpdate,
         user_id: int,
     ) -> CategoryOut:
-        # Проверка владения происходит уже в репозитории
         category = await self.repository.get_by_id(category_id, user_id)
         if category is None:
             raise CategoryNotFound()
@@ -52,8 +54,8 @@ class CategoryService:
 
         return CategoryOut.from_db_row(updated)
 
+
     async def delete(self, category_id: int, user_id: int) -> None:
-        # Проверка владения происходит в репозитории
         category = await self.repository.get_by_id(category_id, user_id)
         if category is None:
             raise CategoryNotFound()

@@ -17,6 +17,7 @@ class CategoryOut(BaseModel):
     name: str
     description: Optional[str]
     created_by: int
+    task_count: int = 0
     created_at: Optional[str]
     updated_at: Optional[str]
 
@@ -27,6 +28,7 @@ class CategoryOut(BaseModel):
             name=row["name"],
             description=row["description"],
             created_by=row["created_by"],
+            task_count=row.get("task_count", 0),
             created_at=row["created_at"].isoformat() if row["created_at"] else None,
             updated_at=row["updated_at"].isoformat() if row["updated_at"] else None,
         )
