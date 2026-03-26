@@ -6,7 +6,7 @@ from src.exceptions.base import AppException
 class CategoryNotFound(AppException):
     status_code = status.HTTP_404_NOT_FOUND
     error_code = "CATEGORY_NOT_FOUND"
-    default_message = "Category not found or you don't have access to it"
+    default_message = "Category not found"
 
 
 class CategoryAlreadyExists(AppException):
