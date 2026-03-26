@@ -69,6 +69,33 @@ class TaskRepository(BaseRepository):
         return [dict(r) for r in records]
 
 
+    async def list_all_tasks_by_category(
+        self, 
+        owner_id: int, 
+        category_id: int,
+        skip: int = 0, 
+        limit: int = 20
+    ) -> List[Dict[str, Any]]:
+        records = await self.fetch_all(
+            """
+            SELECT 
+                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active,
+                t.created_at, t.updated_at,
+                c.name AS category_name
+            FROM task t
+            LEFT JOIN category c ON t.category_id = c.id
+            WHERE t.owner_id = $1 AND t.category_id = $2
+            ORDER BY t.created_at DESC
+            OFFSET $3 LIMIT $4
+            """,
+            owner_id,
+            category_id,
+            skip,
+            limit,
+        )
+        return [dict(r) for r in records]
+
+
     async def patch_task(
         self,
         task_id: int,
@@ -77,22 +104,16 @@ class TaskRepository(BaseRepository):
         is_active: Optional[bool] = None,
         category_id: Optional[int] = None,
     ) -> Optional[Dict[str, Any]]:
-        record = await self.fetch_row(
+        await self.fetch_row(
             """
-            UPDATE task t
+            UPDATE task
             SET 
-                title = COALESCE($1, t.title),
-                description = COALESCE($2, t.description),
-                is_active = COALESCE($3, t.is_active),
-                category_id = COALESCE($4, t.category_id),
+                title = COALESCE($1, title),
+                description = COALESCE($2, description),
+                is_active = COALESCE($3, is_active),
+                category_id = COALESCE($4, category_id),
                 updated_at = NOW()
-            FROM task t2
-            LEFT JOIN category c ON t2.category_id = c.id
-            WHERE t.id = $5
-            RETURNING 
-                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active, 
-                t.created_at, t.updated_at,
-                c.name AS category_name
+            WHERE id = $5
             """,
             title,
             description,
@@ -100,6 +121,20 @@ class TaskRepository(BaseRepository):
             category_id,
             task_id,
         )
+
+        record = await self.fetch_row(
+            """
+            SELECT 
+                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active,
+                t.created_at, t.updated_at,
+                c.name AS category_name
+            FROM task t
+            LEFT JOIN category c ON t.category_id = c.id
+            WHERE t.id = $1
+            """,
+            task_id,
+        )
+
         return dict(record) if record is not None else None
 
 

@@ -43,10 +43,27 @@ class TaskService:
         return TaskOut.from_db_row(record)
 
 
-    async def list_tasks(self, owner_id: int, skip: int = 0, limit: int = 20) -> list[TaskOut]:
-        records = await self.task_repository.list_all_tasks(
-            owner_id=owner_id, skip=skip, limit=limit
-        )
+    async def list_tasks(
+        self, 
+        owner_id: int, 
+        skip: int = 0, 
+        limit: int = 20,
+        category_id: Optional[int] = None
+    ) -> list[TaskOut]:
+        if category_id is not None:
+            await self._validate_category_belongs_to_user(category_id, owner_id)
+            
+            records = await self.task_repository.list_all_tasks_by_category(
+                owner_id=owner_id, 
+                category_id=category_id,
+                skip=skip, 
+                limit=limit
+            )
+        else:
+            records = await self.task_repository.list_all_tasks(
+                owner_id=owner_id, skip=skip, limit=limit
+            )
+        
         return [TaskOut.from_db_row(r) for r in records]
 
 
