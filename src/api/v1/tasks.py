@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Body, Depends, Path, Query, status
 
@@ -23,12 +23,14 @@ async def list_tasks(
     task_service: Annotated[TaskService, Depends(get_task_service)],
     current_user_id: Annotated[int, Depends(get_current_user_id)],
     skip: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    category_id: Annotated[Optional[int], Query(ge=1)] = None,
 ) -> list[TaskOut]:
     return await task_service.list_tasks(
         owner_id=current_user_id,
         skip=skip,
         limit=limit,
+        category_id=category_id
     )
 
 
