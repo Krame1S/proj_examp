@@ -11,7 +11,8 @@
 
 ### Tags
 
-- [x] create tag model
+- [x] Create tag model
+- [x] Create tag schema
 
 ## In Progress
 
@@ -19,7 +20,7 @@
 
 ### Tags
 
-- [ ] create tag schema
+- [ ] Change TaskRepository so it supports tags
 
 ## Planned
 
