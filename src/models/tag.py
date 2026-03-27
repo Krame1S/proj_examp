@@ -1,7 +1,5 @@
 """SQLAlchemy Tag model — used for Alembic migration generation."""
 
-from __future__ import annotations
-
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
