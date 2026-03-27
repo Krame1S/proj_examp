@@ -9,13 +9,17 @@
 - [x] Add category_name to task queries with LEFT JOIN
 - [x] Return category_name in create_task using CTE
 
+### Tags
+
+- [x] create tag model
+
 ## In Progress
 
 - [ ] Add tags
 
 ### Tags
 
-- [ ] create tag model
+- [ ] create tag schema
 
 ## Planned
 
