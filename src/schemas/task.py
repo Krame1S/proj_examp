@@ -23,6 +23,7 @@ class TaskOut(BaseModel):
     owner_id: int
     category_id: Optional[int] = None
     category_name: Optional[str] = None
+    tags: list[str] = []
     is_active: bool
     created_at: Optional[str]
     updated_at: Optional[str]
@@ -36,6 +37,7 @@ class TaskOut(BaseModel):
             owner_id=row["owner_id"],
             category_id=row.get("category_id"),
             category_name=row.get("category_name"),
+            tags=row.get("tags", []),
             is_active=bool(row["is_active"]),
             created_at=row["created_at"].isoformat() if row["created_at"] else None,
             updated_at=row["updated_at"].isoformat() if row["updated_at"] else None,
