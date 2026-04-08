@@ -7,6 +7,7 @@ class TaskIn(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: str = Field(..., max_length=4000)
     category_id: Optional[int] = Field(None, ge=1)
+    tags: list[int] = Field(default_factory=list)
 
 
 class TaskUpdate(BaseModel):
@@ -14,6 +15,7 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=4000)
     is_active: Optional[bool] = None
     category_id: Optional[int] = Field(None, ge=1)
+    tags: Optional[list[int]] = Field(None)
 
 
 class TaskOut(BaseModel):
@@ -23,7 +25,7 @@ class TaskOut(BaseModel):
     owner_id: int
     category_id: Optional[int] = None
     category_name: Optional[str] = None
-    tags: list[str] = []
+    tags: list[str] = Field(default_factory=list)
     is_active: bool
     created_at: Optional[str]
     updated_at: Optional[str]
