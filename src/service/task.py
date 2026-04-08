@@ -39,6 +39,7 @@ class TaskService:
             description=task_in.description,
             owner_id=owner_id,
             category_id=task_in.category_id,
+            tags=task_in.tags,
         )
         
         if record is None:
