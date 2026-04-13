@@ -13,6 +13,7 @@
 
 - [x] Create tag model
 - [x] Create tag schema
+- [x] Create CRUD for tags
 
 ## In Progress
 
