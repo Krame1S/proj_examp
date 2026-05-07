@@ -20,6 +20,8 @@ from src.repository.category import CategoryRepository
 from src.service.category import CategoryService
 from src.service.tag import TagService
 from src.repository.tag import TagRepository
+from src.repository.comment import CommentRepository
+from src.service.comment import CommentService
 
 security_scheme = HTTPBearer()
 
@@ -72,6 +74,11 @@ async def get_tag_repository(
 ) -> TagRepository:
     return TagRepository(conn)
 
+async def get_comment_repository(
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> CommentRepository:
+    return CommentRepository(conn)
+
 
 # ── Service dependencies ─────────────────────────────────
 
@@ -106,3 +113,12 @@ async def get_tag_service(
     repo: Annotated[TagRepository, Depends(get_tag_repository)],
 ) -> TagService:
     return TagService(repo)
+
+async def get_comment_service(
+    comment_repo: Annotated[CommentRepository, Depends(get_comment_repository)],
+    task_repo: Annotated[TaskRepository, Depends(get_task_repository)],
+) -> CommentService:
+    return CommentService(
+        comment_repository=comment_repo,
+        task_repository=task_repo,
+    )
