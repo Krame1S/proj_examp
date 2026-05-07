@@ -6,13 +6,13 @@
 - [x] Add category filtering with validation and repository method for tasks
 - [x] Add category_name to task queries with LEFT JOIN
 - [x] Return category_name in create_task using CTE
+- [x] Fix Body() missing parentheses in sign_up endpoint
+- [x] Add upper bound validation to all Path and Query int parameters
 
 ### Tags
 
-- [x] Create tag model
-- [x] Create tag migration
-- [x] Create tag schema
-- [x] Create CRUD for tags
+- [x] Create tag model and migration
+- [x] Create tag schema and CRUD
 - [x] Fix tag uniqueness to be per-user (UNIQUE(name, created_by))
 - [x] Add tags to all task queries via ARRAY_AGG
 - [x] Implement set_tags_on_task with CTE diff pattern
@@ -20,18 +20,25 @@
 - [x] Add tags field to TaskOut schema
 - [x] Add GetTaskResponse schema with has_more pagination
 - [x] Remove skip-based pagination, switch to limit+1 pattern
-- [x] Fix Body() missing parentheses in sign_up endpoint
+- [x] Implement filter tasks by tags with AND logic
+
+### Comments
+
+- [x] Create comment model and migration
+- [x] Create comment schema, repository, service and CRUD endpoints
+- [x] Nest comments under /tasks/{task_id}/comments
 
 ## In Progress
 
-### Tags
+### File Attachments
 
-- [ ] Add tag filtering to list tasks endpoint
-- [ ] Implement filter by tags with AND logic
+- [ ] Create attachment model and migration
+- [ ] Implement file upload to S3
+- [ ] Store file metadata in DB (key, filename, content_type, size)
+- [ ] Return public URL via S3_PUBLIC_URL
+- [ ] Add delete attachment endpoint
 
 ## Planned
 
 - [ ] Add task search
-- [ ] Add file attachments to tasks
-- [ ] Add comments to tasks
 - [ ] Write unit tests (target 80% coverage)
