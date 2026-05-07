@@ -11,7 +11,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/sign-up", status_code=status.HTTP_201_CREATED)
 async def sign_up(
-    request: Annotated[SignUpRequest, Body],
+    request: Annotated[SignUpRequest, Body()],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> TokenPair:
     return await auth_service.sign_up(request)
