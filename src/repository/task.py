@@ -211,3 +211,38 @@ class TaskRepository(BaseRepository):
             tag_ids,
             owner_id,
         )
+
+    async def list_all_tasks_by_tags(
+        self,
+        owner_id: int,
+        tag_ids: list[int],
+        limit: int,
+    ) -> List[Dict[str, Any]]:
+        records = await self.fetch_all(
+            """
+            SELECT
+                task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
+                task.created_at, task.updated_at,
+                category.name AS category_name,
+                COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
+            FROM task
+            LEFT JOIN category ON task.category_id = category.id
+            LEFT JOIN task_tag ON task.id = task_tag.task_id
+            LEFT JOIN tag ON task_tag.tag_id = tag.id
+            WHERE task.owner_id = $1
+            AND task.id IN (
+                SELECT task_tag.task_id FROM task_tag
+                WHERE task_tag.tag_id = ANY($2::bigint[])
+                GROUP BY task_tag.task_id
+                HAVING COUNT(DISTINCT task_tag.tag_id) = array_length($2::bigint[], 1)
+            )
+            GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
+                    task.is_active, task.created_at, task.updated_at, category.name
+            ORDER BY task.created_at DESC
+            LIMIT $3
+            """,
+            owner_id,
+            tag_ids,
+            limit,
+        )
+        return [dict(r) for r in records]
