@@ -1,7 +1,4 @@
 from typing import Any, Dict, List, Optional
-
-import asyncpg
-
 from src.repository.base import BaseRepository
 
 
@@ -21,38 +18,48 @@ class TaskRepository(BaseRepository):
                 VALUES ($1, $2, $3, $4)
                 RETURNING id, title, description, owner_id, category_id, is_active, created_at, updated_at
             )
-            SELECT 
-                t.id, 
-                t.title, 
-                t.description, 
-                t.owner_id, 
-                t.category_id, 
-                t.is_active,
-                t.created_at, 
-                t.updated_at,
-                c.name AS category_name
-            FROM inserted_task t
-            LEFT JOIN category c ON t.category_id = c.id
+            SELECT
+                task.id,
+                task.title,
+                task.description,
+                task.owner_id,
+                task.category_id,
+                task.is_active,
+                task.created_at,
+                task.updated_at,
+                category.name AS category_name,
+                COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
+            FROM inserted_task AS task
+            LEFT JOIN category ON task.category_id = category.id
+            LEFT JOIN task_tag ON task.id = task_tag.task_id
+            LEFT JOIN tag ON task_tag.tag_id = tag.id
+            GROUP BY task.id, task.title, task.description, task.owner_id,
+                    task.category_id, task.is_active, task.created_at,
+                    task.updated_at, category.name
             """,
             title,
             description,
             owner_id,
             category_id,
         )
-        
         return dict(record) if record is not None else None
 
 
     async def get_task_by_id(self, task_id: int, owner_id: int) -> Optional[Dict[str, Any]]:
         record = await self.fetch_row(
             """
-            SELECT 
-                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active,
-                t.created_at, t.updated_at,
-                c.name AS category_name
-            FROM task t
-            LEFT JOIN category c ON t.category_id = c.id
-            WHERE t.id = $1 AND t.owner_id = $2
+            SELECT
+                task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
+                task.created_at, task.updated_at,
+                category.name AS category_name,
+                COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
+            FROM task
+            LEFT JOIN category ON task.category_id = category.id
+            LEFT JOIN task_tag ON task.id = task_tag.task_id
+            LEFT JOIN tag ON task_tag.tag_id = tag.id
+            WHERE task.id = $1 AND task.owner_id = $2
+            GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
+                     task.is_active, task.created_at, task.updated_at, category.name
             """,
             task_id,
             owner_id,
@@ -61,49 +68,56 @@ class TaskRepository(BaseRepository):
 
 
     async def list_all_tasks(
-        self, owner_id: int, skip: int = 0, limit: int = 20
+        self, owner_id: int, limit: int
     ) -> List[Dict[str, Any]]:
         records = await self.fetch_all(
             """
-            SELECT 
-                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active,
-                t.created_at, t.updated_at,
-                c.name AS category_name
-            FROM task t
-            LEFT JOIN category c ON t.category_id = c.id
-            WHERE t.owner_id = $1
-            ORDER BY t.created_at DESC
-            OFFSET $2 LIMIT $3
+            SELECT
+                task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
+                task.created_at, task.updated_at,
+                category.name AS category_name,
+                COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
+            FROM task
+            LEFT JOIN category ON task.category_id = category.id
+            LEFT JOIN task_tag ON task.id = task_tag.task_id
+            LEFT JOIN tag ON task_tag.tag_id = tag.id
+            WHERE task.owner_id = $1
+            GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
+                     task.is_active, task.created_at, task.updated_at, category.name
+            ORDER BY task.created_at DESC
+            LIMIT $2
             """,
             owner_id,
-            skip,
             limit,
         )
         return [dict(r) for r in records]
 
 
     async def list_all_tasks_by_category(
-        self, 
-        owner_id: int, 
+        self,
+        owner_id: int,
         category_id: int,
-        skip: int = 0, 
-        limit: int = 20
+        limit: int,
     ) -> List[Dict[str, Any]]:
         records = await self.fetch_all(
             """
-            SELECT 
-                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active,
-                t.created_at, t.updated_at,
-                c.name AS category_name
-            FROM task t
-            LEFT JOIN category c ON t.category_id = c.id
-            WHERE t.owner_id = $1 AND t.category_id = $2
-            ORDER BY t.created_at DESC
-            OFFSET $3 LIMIT $4
+            SELECT
+                task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
+                task.created_at, task.updated_at,
+                category.name AS category_name,
+                COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
+            FROM task
+            LEFT JOIN category ON task.category_id = category.id
+            LEFT JOIN task_tag ON task.id = task_tag.task_id
+            LEFT JOIN tag ON task_tag.tag_id = tag.id
+            WHERE task.owner_id = $1 AND task.category_id = $2
+            GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
+                     task.is_active, task.created_at, task.updated_at, category.name
+            ORDER BY task.created_at DESC
+            LIMIT $3
             """,
             owner_id,
             category_id,
-            skip,
             limit,
         )
         return [dict(r) for r in records]
@@ -120,7 +134,7 @@ class TaskRepository(BaseRepository):
         await self.fetch_row(
             """
             UPDATE task
-            SET 
+            SET
                 title = COALESCE($1, title),
                 description = COALESCE($2, description),
                 is_active = COALESCE($3, is_active),
@@ -137,17 +151,21 @@ class TaskRepository(BaseRepository):
 
         record = await self.fetch_row(
             """
-            SELECT 
-                t.id, t.title, t.description, t.owner_id, t.category_id, t.is_active,
-                t.created_at, t.updated_at,
-                c.name AS category_name
-            FROM task t
-            LEFT JOIN category c ON t.category_id = c.id
-            WHERE t.id = $1
+            SELECT
+                task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
+                task.created_at, task.updated_at,
+                category.name AS category_name,
+                COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
+            FROM task
+            LEFT JOIN category ON task.category_id = category.id
+            LEFT JOIN task_tag ON task.id = task_tag.task_id
+            LEFT JOIN tag ON task_tag.tag_id = tag.id
+            WHERE task.id = $1
+            GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
+                     task.is_active, task.created_at, task.updated_at, category.name
             """,
             task_id,
         )
-
         return dict(record) if record is not None else None
 
 
@@ -157,3 +175,39 @@ class TaskRepository(BaseRepository):
             task_id,
         )
         return result == "DELETE 1"
+
+
+    async def set_tags_on_task(
+        self,
+        task_id: int,
+        owner_id: int,
+        tag_ids: List[int],
+    ) -> None:
+        await self.execute(
+            """
+            WITH
+            validated_tags AS (
+                SELECT id FROM tag
+                WHERE id = ANY($2::bigint[]) AND created_by = $3
+            ),
+            inserted_new_task_tag AS (
+                INSERT INTO task_tag (task_id, tag_id)
+                SELECT $1, id FROM validated_tags
+                WHERE id NOT IN (SELECT tag_id FROM task_tag WHERE task_id = $1)
+                ON CONFLICT DO NOTHING
+                RETURNING tag_id
+            ),
+            deleted_old_task_tag AS (
+                DELETE FROM task_tag
+                WHERE task_id = $1
+                AND tag_id NOT IN (SELECT id FROM validated_tags)
+                RETURNING tag_id
+            )
+            SELECT
+                (SELECT ARRAY_AGG(tag_id) FROM inserted_new_task_tag) AS added,
+                (SELECT ARRAY_AGG(tag_id) FROM deleted_old_task_tag) AS removed
+            """,
+            task_id,
+            tag_ids,
+            owner_id,
+        )
