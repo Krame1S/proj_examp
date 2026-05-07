@@ -16,11 +16,13 @@ class TaskService:
         self.task_repository = task_repository
         self.category_repository = category_repository
 
+
     async def _get_task_or_raise(self, task_id: int, owner_id: int) -> dict:
         task = await self.task_repository.get_task_by_id(task_id, owner_id)
         if task is None:
             raise TaskNotFound()
         return task
+
 
     async def _validate_category_belongs_to_user(self, category_id: Optional[int], user_id: int) -> None:
         if category_id is None:
@@ -28,6 +30,7 @@ class TaskService:
         category = await self.category_repository.get_by_id(category_id, user_id)
         if category is None:
             raise CategoryNotFound()
+
 
     async def create_task(self, task_in: TaskIn, owner_id: int) -> TaskOut:
         await self._validate_category_belongs_to_user(task_in.category_id, owner_id)
@@ -55,15 +58,23 @@ class TaskService:
 
         return TaskOut.from_db_row(record)
 
+
     async def list_tasks(
         self,
         owner_id: int,
         limit: int,
         category_id: Optional[int] = None,
+        tag_ids: Optional[list[int]] = None,
     ) -> GetTaskResponse:
-        fetch_limit = limit + 1  # чтобы понять есть ли ещё
+        fetch_limit = limit + 1
 
-        if category_id is not None:
+        if tag_ids:
+            records = await self.task_repository.list_all_tasks_by_tags(
+                owner_id=owner_id,
+                tag_ids=tag_ids,
+                limit=fetch_limit,
+            )
+        elif category_id is not None:
             await self._validate_category_belongs_to_user(category_id, owner_id)
             records = await self.task_repository.list_all_tasks_by_category(
                 owner_id=owner_id,
@@ -77,16 +88,18 @@ class TaskService:
             )
 
         has_more = len(records) > limit
-        tasks = records[:limit]  # обрезаем лишний
+        tasks = records[:limit]
 
         return GetTaskResponse(
             tasks=[TaskOut.from_db_row(r) for r in tasks],
             has_more=has_more,
         )
 
+
     async def get_task_by_id(self, owner_id: int, task_id: int) -> TaskOut:
         record = await self._get_task_or_raise(task_id, owner_id)
         return TaskOut.from_db_row(record)
+
 
     async def patch_task(
         self,
@@ -126,6 +139,7 @@ class TaskService:
         if record is None:
             raise TaskNotFound()
         return TaskOut.from_db_row(record)
+
 
     async def delete_task(self, task_id: int, user_id: int) -> None:
         await self._get_task_or_raise(task_id, user_id)
