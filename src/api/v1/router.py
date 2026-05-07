@@ -5,6 +5,8 @@ from src.api.v1.health import router as health_router
 from src.api.v1.users import router as users_router
 from src.api.v1.tasks import router as tasks_router
 from src.api.v1.categories import router as category_router
+from src.api.v1.tags import router as tags_router
+
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -13,3 +15,4 @@ v1_router.include_router(auth_router)
 v1_router.include_router(users_router)
 v1_router.include_router(tasks_router)
 v1_router.include_router(category_router)
+v1_router.include_router(tags_router)
