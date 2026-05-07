@@ -5,5 +5,6 @@ from src.models.task import Task
 from src.models.category import Category
 from src.models.tag import Tag
 from src.models.task_tag import TaskTag
+from src.models.comment import Comment
 
-__all__ = ["User", "Task", "Category", "Tag", "TaskTag"]
+__all__ = ["User", "Task", "Category", "Tag", "TaskTag", "Comment"]
