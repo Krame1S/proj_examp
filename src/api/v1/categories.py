@@ -28,7 +28,7 @@ async def list_categories(
 
 @router.get("/{category_id}")
 async def get_category(
-    category_id: Annotated[int, Path(ge=1)],
+    category_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     category_service: Annotated[CategoryService, Depends(get_category_service)],
     current_user_id: Annotated[int, Depends(get_current_user_id)],
 ) -> CategoryOut:
@@ -37,7 +37,7 @@ async def get_category(
 
 @router.patch("/{category_id}")
 async def update_category(
-    category_id: Annotated[int, Path(ge=1)],
+    category_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     category_update: Annotated[CategoryUpdate, Body()],
     category_service: Annotated[CategoryService, Depends(get_category_service)],
     current_user_id: Annotated[int, Depends(get_current_user_id)],
@@ -47,7 +47,7 @@ async def update_category(
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(
-    category_id: Annotated[int, Path(ge=1)],
+    category_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     category_service: Annotated[CategoryService, Depends(get_category_service)],
     current_user_id: Annotated[int, Depends(get_current_user_id)],
 ) -> None:

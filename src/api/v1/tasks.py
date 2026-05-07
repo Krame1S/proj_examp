@@ -24,11 +24,13 @@ async def list_tasks(
     current_user_id: Annotated[int, Depends(get_current_user_id)],
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     category_id: Annotated[Optional[int], Query(ge=1)] = None,
+    tag_ids: Annotated[Optional[list[int]], Query()] = None,
 ) -> GetTaskResponse:
     return await task_service.list_tasks(
         owner_id=current_user_id,
         limit=limit,
         category_id=category_id,
+        tag_ids=tag_ids,
     )
 
 
