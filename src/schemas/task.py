@@ -44,3 +44,7 @@ class TaskOut(BaseModel):
             created_at=row["created_at"].isoformat() if row["created_at"] else None,
             updated_at=row["updated_at"].isoformat() if row["updated_at"] else None,
         )
+
+class GetTaskResponse(BaseModel):
+    tasks: list[TaskOut]
+    has_more: bool
