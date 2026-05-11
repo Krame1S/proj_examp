@@ -35,7 +35,7 @@ async def get_tag(
     return await tag_service.get_by_id(tag_id, current_user_id)
 
 
-@router.patch("/{tag_id}")
+@router.put("/{tag_id}")
 async def update_tag(
     tag_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     tag_update: Annotated[TagUpdate, Body()],

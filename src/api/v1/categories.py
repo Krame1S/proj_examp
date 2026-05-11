@@ -35,7 +35,7 @@ async def get_category(
     return await category_service.get_by_id(category_id, current_user_id)
 
 
-@router.patch("/{category_id}")
+@router.put("/{category_id}")
 async def update_category(
     category_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     category_update: Annotated[CategoryUpdate, Body()],

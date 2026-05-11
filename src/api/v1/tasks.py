@@ -43,7 +43,7 @@ async def get_task_by_id(
     return await task_service.get_task_by_id(current_user_id, task_id)
 
 
-@router.patch("/{task_id}", status_code=status.HTTP_200_OK)
+@router.put("/{task_id}", status_code=status.HTTP_200_OK)
 async def patch_task(
     task_id: Annotated[int, Path(ge=1, le=999_999_999_999)],
     update_data: Annotated[TaskUpdate, Body()],
