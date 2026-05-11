@@ -1,4 +1,12 @@
+global:
+  # Prometheus ходит к приложению за метриками каждые 15 секунд
+  scrape_interval: 15s
+
 scrape_configs:
   - job_name: "fastapi-app"
     static_configs:
+      # "app" — это имя сервиса в docker-compose.
+      # Внутри Docker-сети это автоматически резолвится в IP контейнера.
+      # Prometheus и app находятся в одной сети, поэтому имя работает.
       - targets: ["app:8000"]
+    metrics_path: /metrics
