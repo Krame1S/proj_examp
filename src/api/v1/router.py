@@ -7,6 +7,7 @@ from src.api.v1.tasks import router as tasks_router
 from src.api.v1.categories import router as category_router
 from src.api.v1.tags import router as tags_router
 from src.api.v1.comments import router as comments_router
+from src.api.v1.attachments import router as attachments_router
 
 
 v1_router = APIRouter(prefix="/v1")
@@ -18,3 +19,4 @@ v1_router.include_router(tasks_router)
 v1_router.include_router(category_router)
 v1_router.include_router(tags_router)
 v1_router.include_router(comments_router)
+v1_router.include_router(attachments_router)
