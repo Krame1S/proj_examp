@@ -1,4 +1,5 @@
 import logging
+import os
 
 import aiohttp
 from aiobotocore.session import get_session
@@ -9,11 +10,19 @@ from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# ==================== MOCK MODE ====================
+MOCK_S3 = settings.DEBUG or os.getenv("MOCK_S3", "false").lower() in ("true", "1", "yes")
+
+
 _s3_retry = retry(
     retry=retry_if_exception_type((ClientError, EndpointConnectionError, OSError)),
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    before_sleep=lambda rs: logger.warning("S3 retry attempt %s after %s", rs.attempt_number, rs.outcome.exception() if rs.outcome else "unknown"),
+    before_sleep=lambda rs: logger.warning(
+        "S3 retry attempt %s after %s", 
+        rs.attempt_number, 
+        rs.outcome.exception() if rs.outcome else "unknown"
+    ),
 )
 
 
@@ -30,6 +39,13 @@ def _get_s3_client():
 
 @_s3_retry
 async def upload_bytes(key: str, data: bytes, content_type: str = "application/octet-stream") -> None:
+    """Загружает файл в S3. В dev-режиме — имитирует загрузку."""
+    
+    if MOCK_S3:
+        logger.info(f"🟡 [MOCK S3] Uploaded {len(data)} bytes → {key}")
+        return
+
+    # Реальная загрузка в S3
     async with _get_s3_client() as client:
         await client.put_object(
             Bucket=settings.S3_BUCKET_NAME,
@@ -40,6 +56,7 @@ async def upload_bytes(key: str, data: bytes, content_type: str = "application/o
     logger.info("Uploaded %s (%d bytes)", key, len(data))
 
 
+# Остальные функции без изменений
 @_s3_retry
 async def upload_from_url(key: str, url: str, content_type: str = "application/octet-stream") -> str | None:
     async with aiohttp.ClientSession() as http, http.get(url) as resp:
