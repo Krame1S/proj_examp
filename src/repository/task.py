@@ -232,7 +232,7 @@ class TaskRepository(BaseRepository):
             WHERE task.owner_id = $1
             AND task.id IN (
                 SELECT task_tag.task_id FROM task_tag
-                WHERE task_tag.tag_id = ANY($2::bigint[])
+                WHERE task_tag.tag_id IN (SELECT UNNEST($2::bigint[]))
                 GROUP BY task_tag.task_id
                 HAVING COUNT(DISTINCT task_tag.tag_id) = array_length($2::bigint[], 1)
             )
