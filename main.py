@@ -14,6 +14,7 @@ from src.core.security import load_keys
 from src.db.pool import close_db_pool, init_db_pool
 from src.middleware.logging import LoggingMiddleware
 from src.middleware.metrics import MetricsMiddleware
+from src.middleware.tracing import TracingMiddleware, setup_tracing
 from src.utils.logging import setup_logging
 
 
@@ -21,6 +22,11 @@ from src.utils.logging import setup_logging
 async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────────────────
     setup_logging()
+    if settings.ENABLE_TRACING:
+        setup_tracing(
+            service_name=settings.OTEL_SERVICE_NAME,
+            otlp_endpoint=settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+        )
     load_keys()
     await init_db_pool()
 
@@ -55,6 +61,9 @@ app.add_middleware(
 
 if settings.ENABLE_METRICS:
     app.add_middleware(MetricsMiddleware)
+
+if settings.ENABLE_TRACING:
+    app.add_middleware(TracingMiddleware)
 
 app.add_middleware(LoggingMiddleware)
 
