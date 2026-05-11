@@ -22,6 +22,8 @@ from src.service.tag import TagService
 from src.repository.tag import TagRepository
 from src.repository.comment import CommentRepository
 from src.service.comment import CommentService
+from src.repository.attachment import AttachmentRepository
+from src.service.attachment import AttachmentService
 
 security_scheme = HTTPBearer()
 
@@ -79,6 +81,11 @@ async def get_comment_repository(
 ) -> CommentRepository:
     return CommentRepository(conn)
 
+async def get_attachment_repository(
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> AttachmentRepository:
+    return AttachmentRepository(conn)
+
 
 # ── Service dependencies ─────────────────────────────────
 
@@ -120,5 +127,14 @@ async def get_comment_service(
 ) -> CommentService:
     return CommentService(
         comment_repository=comment_repo,
+        task_repository=task_repo,
+    )
+
+async def get_attachment_service(
+    attachment_repo: Annotated[AttachmentRepository, Depends(get_attachment_repository)],
+    task_repo: Annotated[TaskRepository, Depends(get_task_repository)],
+) -> AttachmentService:
+    return AttachmentService(
+        attachment_repository=attachment_repo,
         task_repository=task_repo,
     )
