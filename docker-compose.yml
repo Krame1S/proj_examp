@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: mydb
     ports:
-      - "5433:5432"
+      - "5433:5432"   # 5433 снаружи чтобы не конфликтовать с локальным postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -24,26 +24,61 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
       REDIS_URL: redis://redis:6379
+      ENABLE_TRACING: "true"
+      OTEL_SERVICE_NAME: "task-manager"
+      # Jaeger внутри Docker-сети виден как "jaeger:4317"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
     depends_on:
       - postgres
       - redis
+      - jaeger
 
+  # ── Jaeger — система трейсинга ──────────────────────────────────────
+  # Jaeger собирает "трейсы" — цепочки вызовов внутри одного запроса.
+  # Ты видишь: запрос пришёл → сколько ждал БД → сколько Redis → итого.
+  #
+  # all-in-one — образ "всё в одном": коллектор + UI + хранилище.
+  # В продакшене разворачивают по отдельности, но для разработки хватает.
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    environment:
+      # Включаем приём данных по протоколу OTLP (OpenTelemetry Protocol)
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # Jaeger UI — открой в браузере: http://localhost:16686
+      - "4317:4317"     # OTLP gRPC — сюда FastAPI отправляет трейсы
+
+  # ── Prometheus — сбор метрик ────────────────────────────────────────
+  # Prometheus сам ходит к приложению и "скрейпит" (scrape) метрики каждые N секунд.
+  # Метрики — числа: сколько запросов, как долго, сколько ошибок.
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.53.0
     ports:
-      - "9090:9090"
+      - "9090:9090"   # Prometheus UI: http://localhost:9090
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    depends_on:
-      - app
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Именованный volume — Prometheus хранит данные между перезапусками
+      - prometheusdata:/prometheus
 
+  # ── Grafana — визуализация ──────────────────────────────────────────
+  # Grafana читает данные из Prometheus и Jaeger и рисует красивые дашборды.
+  # Prometheus → числовые графики (латентность, RPS, ошибки)
+  # Jaeger → трейсы (временная шкала конкретного запроса)
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.1.0
     ports:
-      - "3000:3000"
+      - "3000:3000"   # Grafana UI: http://localhost:3000 (admin/admin по умолчанию)
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      # Grafana хранит дашборды и настройки между перезапусками
+      - grafanadata:/var/lib/grafana
     depends_on:
       - prometheus
+      - jaeger
 
 volumes:
   pgdata:
   redisdata:
+  prometheusdata:   # данные Prometheus (не теряются при docker compose restart)
+  grafanadata:      # дашборды и datasources Grafana
