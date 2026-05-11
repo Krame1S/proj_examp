@@ -44,5 +44,10 @@ class Settings(BaseSettings):
     # ── Prometheus Metrics ───────────────────────────────
     ENABLE_METRICS: bool = True
 
+    # ── OpenTelemetry Tracing ────────────────────────────
+    ENABLE_TRACING: bool = False
+    OTEL_SERVICE_NAME: str = "my-backend"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://jaeger:4317"
+
 
 settings = Settings()
