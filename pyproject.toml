@@ -7,6 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+setuptools = "^75.0"
 # Web framework
 fastapi = "^0.115"
 uvicorn = { version = "^0.34", extras = ["standard"] }
@@ -33,8 +34,13 @@ aiohttp = "^3.11"
 tenacity = "^9.0"
 # Monitoring
 prometheus-client = "^0.22"
+opentelemetry-api = "^1.27"
+opentelemetry-sdk = "^1.27"
+opentelemetry-exporter-otlp-proto-grpc = "^1.27"
+opentelemetry-instrumentation-asyncpg = "^0.48b0"
 # Logging
 colorama = "^0.4"
+python-multipart = "^0.0.27"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11"
