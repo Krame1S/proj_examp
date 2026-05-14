@@ -10,13 +10,14 @@ class TaskRepository(BaseRepository):
         description: str,
         owner_id: int,
         category_id: Optional[int] = None,
+        status: str = "todo",
     ) -> Optional[Dict[str, Any]]:
         record = await self.fetch_row(
             """
             WITH inserted_task AS (
-                INSERT INTO task (title, description, owner_id, category_id)
-                VALUES ($1, $2, $3, $4)
-                RETURNING id, title, description, owner_id, category_id, is_active, created_at, updated_at
+                INSERT INTO task (title, description, owner_id, category_id, status)
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING id, title, description, owner_id, category_id, is_active, status, created_at, updated_at
             )
             SELECT
                 task.id,
@@ -25,6 +26,7 @@ class TaskRepository(BaseRepository):
                 task.owner_id,
                 task.category_id,
                 task.is_active,
+                task.status,
                 task.created_at,
                 task.updated_at,
                 category.name AS category_name,
@@ -34,13 +36,14 @@ class TaskRepository(BaseRepository):
             LEFT JOIN task_tag ON task.id = task_tag.task_id
             LEFT JOIN tag ON task_tag.tag_id = tag.id
             GROUP BY task.id, task.title, task.description, task.owner_id,
-                    task.category_id, task.is_active, task.created_at,
+                    task.category_id, task.is_active, task.status, task.created_at,
                     task.updated_at, category.name
             """,
             title,
             description,
             owner_id,
             category_id,
+            status,
         )
         return dict(record) if record is not None else None
 
@@ -50,7 +53,7 @@ class TaskRepository(BaseRepository):
             """
             SELECT
                 task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
-                task.created_at, task.updated_at,
+                task.status, task.created_at, task.updated_at,
                 category.name AS category_name,
                 COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
             FROM task
@@ -59,7 +62,7 @@ class TaskRepository(BaseRepository):
             LEFT JOIN tag ON task_tag.tag_id = tag.id
             WHERE task.id = $1 AND task.owner_id = $2
             GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
-                     task.is_active, task.created_at, task.updated_at, category.name
+                     task.is_active, task.status, task.created_at, task.updated_at, category.name
             """,
             task_id,
             owner_id,
@@ -68,13 +71,13 @@ class TaskRepository(BaseRepository):
 
 
     async def list_all_tasks(
-        self, owner_id: int, limit: int
+        self, owner_id: int, limit: int, status: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT
                 task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
-                task.created_at, task.updated_at,
+                task.status, task.created_at, task.updated_at,
                 category.name AS category_name,
                 COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
             FROM task
@@ -82,13 +85,15 @@ class TaskRepository(BaseRepository):
             LEFT JOIN task_tag ON task.id = task_tag.task_id
             LEFT JOIN tag ON task_tag.tag_id = tag.id
             WHERE task.owner_id = $1
+              AND ($3::text IS NULL OR task.status = $3)
             GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
-                     task.is_active, task.created_at, task.updated_at, category.name
+                     task.is_active, task.status, task.created_at, task.updated_at, category.name
             ORDER BY task.created_at DESC
             LIMIT $2
             """,
             owner_id,
             limit,
+            status,
         )
         return [dict(r) for r in records]
 
@@ -98,12 +103,13 @@ class TaskRepository(BaseRepository):
         owner_id: int,
         category_id: int,
         limit: int,
+        status: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT
                 task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
-                task.created_at, task.updated_at,
+                task.status, task.created_at, task.updated_at,
                 category.name AS category_name,
                 COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
             FROM task
@@ -111,14 +117,16 @@ class TaskRepository(BaseRepository):
             LEFT JOIN task_tag ON task.id = task_tag.task_id
             LEFT JOIN tag ON task_tag.tag_id = tag.id
             WHERE task.owner_id = $1 AND task.category_id = $2
+              AND ($4::text IS NULL OR task.status = $4)
             GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
-                     task.is_active, task.created_at, task.updated_at, category.name
+                     task.is_active, task.status, task.created_at, task.updated_at, category.name
             ORDER BY task.created_at DESC
             LIMIT $3
             """,
             owner_id,
             category_id,
             limit,
+            status,
         )
         return [dict(r) for r in records]
 
@@ -130,6 +138,7 @@ class TaskRepository(BaseRepository):
         description: Optional[str] = None,
         is_active: Optional[bool] = None,
         category_id: Optional[int] = None,
+        status: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         await self.fetch_row(
             """
@@ -139,13 +148,15 @@ class TaskRepository(BaseRepository):
                 description = COALESCE($2, description),
                 is_active = COALESCE($3, is_active),
                 category_id = COALESCE($4, category_id),
+                status = COALESCE($5, status),
                 updated_at = NOW()
-            WHERE id = $5
+            WHERE id = $6
             """,
             title,
             description,
             is_active,
             category_id,
+            status,
             task_id,
         )
 
@@ -153,7 +164,7 @@ class TaskRepository(BaseRepository):
             """
             SELECT
                 task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
-                task.created_at, task.updated_at,
+                task.status, task.created_at, task.updated_at,
                 category.name AS category_name,
                 COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
             FROM task
@@ -162,7 +173,7 @@ class TaskRepository(BaseRepository):
             LEFT JOIN tag ON task_tag.tag_id = tag.id
             WHERE task.id = $1
             GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
-                     task.is_active, task.created_at, task.updated_at, category.name
+                     task.is_active, task.status, task.created_at, task.updated_at, category.name
             """,
             task_id,
         )
@@ -217,12 +228,13 @@ class TaskRepository(BaseRepository):
         owner_id: int,
         tag_ids: list[int],
         limit: int,
+        status: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT
                 task.id, task.title, task.description, task.owner_id, task.category_id, task.is_active,
-                task.created_at, task.updated_at,
+                task.status, task.created_at, task.updated_at,
                 category.name AS category_name,
                 COALESCE(ARRAY_AGG(tag.name) FILTER (WHERE tag.id IS NOT NULL), ARRAY[]::text[]) AS tags
             FROM task
@@ -230,6 +242,7 @@ class TaskRepository(BaseRepository):
             LEFT JOIN task_tag ON task.id = task_tag.task_id
             LEFT JOIN tag ON task_tag.tag_id = tag.id
             WHERE task.owner_id = $1
+            AND ($4::text IS NULL OR task.status = $4)
             AND task.id IN (
                 SELECT task_tag.task_id FROM task_tag
                 WHERE task_tag.tag_id IN (SELECT UNNEST($2::bigint[]))
@@ -237,12 +250,13 @@ class TaskRepository(BaseRepository):
                 HAVING COUNT(DISTINCT task_tag.tag_id) = array_length($2::bigint[], 1)
             )
             GROUP BY task.id, task.title, task.description, task.owner_id, task.category_id,
-                    task.is_active, task.created_at, task.updated_at, category.name
+                    task.is_active, task.status, task.created_at, task.updated_at, category.name
             ORDER BY task.created_at DESC
             LIMIT $3
             """,
             owner_id,
             tag_ids,
             limit,
+            status,
         )
         return [dict(r) for r in records]
