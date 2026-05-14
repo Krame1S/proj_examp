@@ -1,9 +1,18 @@
 """SQLAlchemy Task model — used for Alembic migration generation."""
 
+import enum
+
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base, TimestampMixin
+
+
+class TaskStatus(str, enum.Enum):
+    todo = "todo"
+    in_progress = "in_progress"
+    done = "done"
+    cancelled = "cancelled"
 
 
 class Task(TimestampMixin, Base):
@@ -16,6 +25,9 @@ class Task(TimestampMixin, Base):
         sa.BigInteger, sa.ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
     is_active: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.true(), nullable=False)
+    status: Mapped[str] = mapped_column(
+        sa.String(32), nullable=False, server_default="todo"
+    )
     category_id: Mapped[int | None] = mapped_column(
         sa.BigInteger,
         sa.ForeignKey("category.id", ondelete="SET NULL"),
