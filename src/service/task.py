@@ -5,6 +5,7 @@ from src.exceptions.task import TaskNotFound
 from src.repository.category import CategoryRepository
 from src.repository.task import TaskRepository
 from src.schemas.task import TaskIn, TaskOut, TaskUpdate, GetTaskResponse
+from src.models.task import TaskStatus
 
 
 class TaskService:
@@ -40,6 +41,7 @@ class TaskService:
             description=task_in.description,
             owner_id=owner_id,
             category_id=task_in.category_id,
+            status=task_in.status.value,
         )
 
         if record is None:
@@ -65,14 +67,18 @@ class TaskService:
         limit: int,
         category_id: Optional[int] = None,
         tag_ids: Optional[list[int]] = None,
+        status_filter: Optional["TaskStatus"] = None,
     ) -> GetTaskResponse:
+
         fetch_limit = limit + 1
+        status_value = status_filter.value if status_filter else None
 
         if tag_ids:
             records = await self.task_repository.list_all_tasks_by_tags(
                 owner_id=owner_id,
                 tag_ids=tag_ids,
                 limit=fetch_limit,
+                status=status_value,
             )
         elif category_id is not None:
             await self._validate_category_belongs_to_user(category_id, owner_id)
@@ -80,11 +86,13 @@ class TaskService:
                 owner_id=owner_id,
                 category_id=category_id,
                 limit=fetch_limit,
+                status=status_value,
             )
         else:
             records = await self.task_repository.list_all_tasks(
                 owner_id=owner_id,
                 limit=fetch_limit,
+                status=status_value,
             )
 
         has_more = len(records) > limit
@@ -130,6 +138,7 @@ class TaskService:
                 description=changes.get("description"),
                 is_active=changes.get("is_active"),
                 category_id=changes.get("category_id"),
+                status=changes["status"].value if "status" in changes else None,
             )
             if updated is None:
                 raise TaskNotFound()
