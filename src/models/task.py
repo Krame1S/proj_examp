@@ -27,7 +27,6 @@ class Task(TimestampMixin, Base):
     owner_id: Mapped[int] = mapped_column(
         sa.BigInteger, sa.ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
-    is_active: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.true(), nullable=False)
     status: Mapped[TaskStatus] = mapped_column(
         task_status_enum, nullable=False, server_default="todo"
     )

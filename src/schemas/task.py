@@ -16,7 +16,6 @@ class TaskIn(BaseModel):
 class TaskUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None, max_length=4000)
-    is_active: Optional[bool] = None
     category_id: Optional[int] = Field(None, ge=1)
     tags: Optional[list[int]] = Field(None)
     status: Optional[TaskStatus] = None
@@ -30,7 +29,6 @@ class TaskOut(BaseModel):
     category_id: Optional[int] = None
     category_name: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
-    is_active: bool
     status: TaskStatus
     created_at: Optional[str]
     updated_at: Optional[str]
@@ -45,7 +43,6 @@ class TaskOut(BaseModel):
             category_id=row.get("category_id"),
             category_name=row.get("category_name"),
             tags=row.get("tags", []),
-            is_active=bool(row["is_active"]),
             status=TaskStatus(row.get("status", "todo")),
             created_at=row["created_at"].isoformat() if row["created_at"] else None,
             updated_at=row["updated_at"].isoformat() if row["updated_at"] else None,
