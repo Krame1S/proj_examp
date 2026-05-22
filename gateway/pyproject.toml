@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "gateway"
+version = "0.1.0"
+description = "API Gateway — RabbitMQ RPC proxy"
+authors = ["Your Name <your@email.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115"
+uvicorn = { version = "^0.34", extras = ["standard"] }
+aio-pika = "^9.6"
+pydantic = "^2.10"
+pydantic-settings = "^2.7"
+email-validator = "^2.2"
+redis = "^5.2"
+prometheus-client = "^0.21"
+colorama = "^0.4"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
