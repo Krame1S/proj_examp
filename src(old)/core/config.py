@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     S3_PUBLIC_URL: str = ""
     S3_REGION: str = "us-east-1"
 
+    # ── RabbitMQ ────────────────────────────────────────
+    RABBIT_AMQP: str = "amqp://guest:guest@localhost:5672/"
+
     # ── Prometheus Metrics ───────────────────────────────
     ENABLE_METRICS: bool = True
 
