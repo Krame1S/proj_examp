@@ -5,6 +5,7 @@ from src.exceptions.auth import AuthServiceError, EmailAlreadyRegistered
 from src.exceptions.base import AppException
 from src.schemas.auth import RefreshRequest, SignInRequest, SignUpRequest
 from src.services.auth import AuthService
+from src.services.user import UserService
 
 logger = logging.getLogger(__name__)
 
@@ -50,4 +51,45 @@ class ConsumerProcessor:
             return json.dumps(e.to_dict())
         except Exception:
             logger.exception("Unexpected error in refresh")
+            return json.dumps(AppException().to_dict())
+
+    @staticmethod
+    async def get_profile(message: bytes) -> str:
+        try:
+            data = json.loads(message)
+            service = await UserService.create()
+            result = await service.get_profile(data["user_id"])
+            return result.model_dump_json()
+        except AppException as e:
+            return json.dumps(e.to_dict())
+        except Exception:
+            logger.exception("Unexpected error in get_profile")
+            return json.dumps(AppException().to_dict())
+
+
+    @staticmethod
+    async def update_profile(message: bytes) -> str:
+        try:
+            data = json.loads(message)
+            service = await UserService.create()
+            result = await service.update_email(data["user_id"], data["email"])
+            return result.model_dump_json()
+        except AppException as e:
+            return json.dumps(e.to_dict())
+        except Exception:
+            logger.exception("Unexpected error in update_profile")
+            return json.dumps(AppException().to_dict())
+
+
+    @staticmethod
+    async def delete_account(message: bytes) -> str:
+        try:
+            data = json.loads(message)
+            service = await UserService.create()
+            await service.delete(data["user_id"])
+            return json.dumps({})
+        except AppException as e:
+            return json.dumps(e.to_dict())
+        except Exception:
+            logger.exception("Unexpected error in delete_account")
             return json.dumps(AppException().to_dict())
