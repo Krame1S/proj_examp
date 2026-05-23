@@ -5,8 +5,9 @@ class ConsumerQueue(Enum):
     AUTH_SIGN_UP = "auth.sign_up"
     AUTH_SIGN_IN = "auth.sign_in"
     AUTH_REFRESH = "auth.refresh"
-    USER_GET = "user.get"
-    USER_UPDATE = "user.update"
+    USER_GET_PROFILE = "user.get_profile"
+    USER_UPDATE_PROFILE = "user.update_profile"
+    USER_DELETE = "user.delete"
 
 
 class ResponseQueue(Enum):
