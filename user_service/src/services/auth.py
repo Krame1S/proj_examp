@@ -7,14 +7,16 @@ from src.core.config import settings
 from src.core.security import (
     create_access_token,
     create_refresh_token,
+    decode_refresh_token,
     hash_password,
     store_refresh_token,
+    verify_password,
 )
-from src.exceptions.auth import EmailAlreadyRegistered
+from src.exceptions.auth import AccountDeactivated, EmailAlreadyRegistered, InvalidCredentials, InvalidRefreshToken
 from src.repository.user import UserRepository
 from src.core.database import get_db_pool
 
-from src.schemas.auth import SignUpRequest, TokenPair
+from src.schemas.auth import SignInRequest, SignUpRequest, TokenPair
 
 logger = logging.getLogger(__name__)
 
@@ -44,37 +46,33 @@ class AuthService:
         return TokenPair(access_token=access, refresh_token=refresh)
 
 
+    async def sign_in(self, request: SignInRequest) -> TokenPair:
+        user = await self.repository.get_by_email(request.email)
+        if not user:
+            raise InvalidCredentials()
+
+        if not verify_password(request.password, user["password_hash"]):
+            raise InvalidCredentials()
+
+        if not user["is_active"]:
+            raise AccountDeactivated()
+
+        access = create_access_token(user["id"])
+        refresh = create_refresh_token(user["id"])
+        await store_refresh_token(user["id"], refresh, self.redis)
+
+        return TokenPair(access_token=access, refresh_token=refresh)
 
 
+    async def refresh(self, refresh_token: str) -> TokenPair:
+        try:
+            user_id = await decode_refresh_token(refresh_token, self.redis)
+        except Exception as e:
+            logger.warning("Invalid refresh token attempt", exc_info=True)
+            raise InvalidRefreshToken() from e
 
+        access = create_access_token(user_id)
+        refresh = create_refresh_token(user_id)
+        await store_refresh_token(user_id, refresh, self.redis)
 
-    # async def sign_in(self, request: SignInRequest) -> TokenPair:
-    #     user = await self.repository.get_by_email(request.email)
-    #     if not user:
-    #         raise InvalidCredentials()
-
-    #     if not verify_password(request.password, user["password_hash"]):
-    #         raise InvalidCredentials()
-
-    #     if not user["is_active"]:
-    #         raise AccountDeactivated()
-
-    #     access = create_access_token(user["id"])
-    #     refresh = create_refresh_token(user["id"])
-    #     await store_refresh_token(user["id"], refresh, self.redis)
-
-    #     return TokenPair(access_token=access, refresh_token=refresh)
-
-
-    # async def refresh(self, refresh_token: str) -> TokenPair:
-    #     try:
-    #         user_id = await decode_refresh_token(refresh_token, self.redis)
-    #     except Exception as e:
-    #         logger.warning("Invalid refresh token attempt", exc_info=True)
-    #         raise InvalidRefreshToken() from e
-
-    #     access = create_access_token(user_id)
-    #     refresh = create_refresh_token(user_id)
-    #     await store_refresh_token(user_id, refresh, self.redis)
-
-    #     return TokenPair(access_token=access, refresh_token=refresh)
+        return TokenPair(access_token=access, refresh_token=refresh)

@@ -14,18 +14,17 @@ from shared.log.setup import setup_logging
 from src.broker.consumer import rpc_consumer
 from shared.broker.queues import ConsumerQueue
 from shared.broker.exchanges import ResponseExchange
-from broker.consumer_processor import ConsumerProcessor
+from src.broker.consumer_processor import ConsumerProcessor
 
 from src.core.config import settings
+from src.core.database import close_db_pool
+from src.core.security import load_keys
 
 
 async def main() -> None:
     setup_logging(level=settings.LOGGING_LEVEL)
     logger = logging.getLogger(__name__)
     logger.info("Starting RPC consumer service")
-
-    from src.core.database import close_db_pool
-    from src.core.security import load_keys
     load_keys()
 
     try:
@@ -37,6 +36,23 @@ async def main() -> None:
                     response_exchange_name=ResponseExchange.DEFAULT,
                 )
             )
+
+            tg.create_task(
+                rpc_consumer.start_consuming(
+                    queue_name=ConsumerQueue.AUTH_SIGN_IN.value,
+                    callback=ConsumerProcessor.sign_in,
+                    response_exchange_name=ResponseExchange.DEFAULT,
+                )
+            )
+
+            tg.create_task(
+                rpc_consumer.start_consuming(
+                    queue_name=ConsumerQueue.AUTH_REFRESH.value,
+                    callback=ConsumerProcessor.refresh,
+                    response_exchange_name=ResponseExchange.DEFAULT,
+                )
+            )
+
     finally:
         await close_db_pool()
 
