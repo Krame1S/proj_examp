@@ -12,6 +12,7 @@ RUN pip install poetry --no-cache-dir && \
     poetry install --no-interaction --no-ansi --without dev
 
 COPY gateway/ .
+COPY keys/ /app/keys/
 
 ENV PYTHONPATH="/app/shared/src"
 

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = "*"
 
+    JWT_ALGORITHM: str = "RS256"
+    JWT_PUBLIC_KEY_PATH: str = "/app/keys/public.pem"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",")]

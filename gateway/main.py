@@ -8,6 +8,7 @@ from src.api.errors import register_error_handlers
 from src.api.v1.router import v1_router
 from src.broker.rpc_publisher import rpc_publisher
 from src.core.config import settings
+from src.core.security import load_public_key
 from src.middleware.logging import LoggingMiddleware
 from shared.broker.exchanges import ResponseExchange
 from shared.broker.queues import ResponseQueue
@@ -24,6 +25,7 @@ def setup_logging() -> None:
 async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────────────────
     setup_logging()
+    load_public_key(settings.JWT_PUBLIC_KEY_PATH) 
 
     await rpc_publisher.connect(
         response_queue_name=ResponseQueue.DEFAULT.value,
