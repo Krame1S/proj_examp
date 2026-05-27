@@ -106,6 +106,35 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  migrate_task:
+    build:
+      context: .
+      dockerfile: task_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: >
+      sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  task_service:
+    build:
+      context: .
+      dockerfile: task_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_task:
+        condition: service_completed_successfully
+
   # ── Observability (опционально, можно закомментировать для быстрого теста) ──
 
   # jaeger:
