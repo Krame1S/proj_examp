@@ -37,7 +37,7 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     ports:
       - "5672:5672"
-      - "15672:15672"   # Management UI: http://localhost:15672
+      - "15672:15672"
     volumes:
       - rabbitmqdata:/var/lib/rabbitmq
     healthcheck:
@@ -46,18 +46,60 @@ services:
       timeout: 5s
       retries: 10
 
-  # ── Migrations (one-shot, runs before user_service starts) ───────────
+  # ── Migrations ───────────────────────────────────────────────────────
 
   migrate:
     build:
-      context: .                       # корень репо — чтобы shared был доступен
+      context: .
       dockerfile: user_service/Dockerfile
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
     env_file:
       - user_service/.env
-    command: >
-      sh -c "alembic upgrade head"
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate_category:
+    build:
+      context: .
+      dockerfile: category_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate_task:
+    build:
+      context: .
+      dockerfile: task_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate_tag:
+    build:
+      context: .
+      dockerfile: tag_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  migrate_comment:
+    build:
+      context: .
+      dockerfile: comment_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,7 +108,7 @@ services:
 
   gateway:
     build:
-      context: .                       # корень — чтобы скопировать shared/
+      context: .
       dockerfile: gateway/Dockerfile
     ports:
       - "8000:8000"
@@ -86,7 +128,7 @@ services:
 
   user_service:
     build:
-      context: .                       # корень — чтобы скопировать shared/ и keys/
+      context: .
       dockerfile: user_service/Dockerfile
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
@@ -106,17 +148,7 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  migrate_task:
-    build:
-      context: .
-      dockerfile: task_service/Dockerfile
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
-    command: >
-      sh -c "alembic upgrade head"
-    depends_on:
-      postgres:
-        condition: service_healthy
+  # ── Task Service ─────────────────────────────────────────────────────
 
   task_service:
     build:
@@ -133,6 +165,61 @@ services:
       postgres:
         condition: service_healthy
       migrate_task:
+        condition: service_completed_successfully
+
+  # ── Category Service ─────────────────────────────────────────────────
+
+  category_service:
+    build:
+      context: .
+      dockerfile: category_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_category:
+        condition: service_completed_successfully
+
+  # ── Tag Service ──────────────────────────────────────────────────────
+
+  tag_service:
+    build:
+      context: .
+      dockerfile: tag_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_tag:
+        condition: service_completed_successfully
+
+  comment_service:
+    build:
+      context: .
+      dockerfile: comment_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_comment:
         condition: service_completed_successfully
 
   # ── Observability (опционально, можно закомментировать для быстрого теста) ──
