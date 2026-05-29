@@ -31,6 +31,11 @@ class ConsumerQueue(Enum):
     TAG_PATCH = "tag.patch"
     TAG_DELETE = "tag.delete"
 
+    # Comment service
+    COMMENT_CREATE = "comment.create"
+    COMMENT_LIST = "comment.list"
+    COMMENT_DELETE = "comment.delete"
+
 
 class ResponseQueue(Enum):
     DEFAULT = "rpc_response"
