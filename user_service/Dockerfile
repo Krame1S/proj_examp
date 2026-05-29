@@ -16,7 +16,7 @@ COPY user_service/ .
 # keys нужны для JWT — монтируем из корня проекта
 COPY keys/ /app/keys/
 
-ENV PYTHONPATH="/app/shared/src"
+ENV PYTHONPATH="/app:/app/shared/src"
 
 # user_service — это RabbitMQ consumer, не HTTP-сервер
 CMD ["python", "consumer_main.py"]

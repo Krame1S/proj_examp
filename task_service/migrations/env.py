@@ -5,9 +5,10 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
+import sqlalchemy as sa
 
-from src.models.base import Base
-from src.models import task, task_tag, category, tag, comment, attachment  # noqa: F401
+from task_service.models.base import Base
+from task_service.models import task, task_tag  # type: ignore # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
@@ -24,10 +25,13 @@ def get_url() -> str:
 
 
 def do_run_migrations(connection) -> None:
+    connection.execute(sa.text("CREATE SCHEMA IF NOT EXISTS tasks"))
+    connection.commit()
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
-        version_table="alembic_version_task",  # добавь это
+        version_table="alembic_version",
+        version_table_schema="tasks",
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -39,7 +43,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        version_table="alembic_version_task",  # и это
+        version_table="alembic_version",
+        version_table_schema="tasks",
     )
     with context.begin_transaction():
         context.run_migrations()

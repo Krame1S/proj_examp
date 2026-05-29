@@ -14,6 +14,6 @@ RUN pip install poetry --no-cache-dir && \
 COPY gateway/ .
 COPY keys/ /app/keys/
 
-ENV PYTHONPATH="/app/shared/src"
+ENV PYTHONPATH="/app:/app/shared/src"
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

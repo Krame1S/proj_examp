@@ -4,12 +4,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.errors import register_error_handlers
-from src.api.v1.router import v1_router
-from src.broker.rpc_publisher import rpc_publisher
-from src.core.config import settings
-from src.core.security import load_public_key
-from src.middleware.logging import LoggingMiddleware
+from gateway.api.errors import register_error_handlers
+from gateway.api.v1.router import v1_router
+from gateway.broker.rpc_publisher import rpc_publisher
+from gateway.core.config import settings
+from gateway.core.security import load_public_key
+from gateway.middleware.logging import LoggingMiddleware
 from shared.broker.exchanges import ResponseExchange
 from shared.broker.queues import ResponseQueue
 

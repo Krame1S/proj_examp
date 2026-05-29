@@ -5,9 +5,10 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
+import sqlalchemy as sa
 
-from src.models.base import Base
-from src.models import user  # noqa: F401 — импорт нужен чтобы Base.metadata увидела модель
+from user_service.models.base import Base
+from user_service.models import user  # noqa: F401 — импорт нужен чтобы Base.metadata увидела модель
 
 config = context.config
 if config.config_file_name is not None:
@@ -29,13 +30,22 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        version_table="alembic_version",
+        version_table_schema="users",
     )
     with context.begin_transaction():
         context.run_migrations()
 
 
 def do_run_migrations(connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    connection.execute(sa.text("CREATE SCHEMA IF NOT EXISTS users"))
+    connection.commit()
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        version_table="alembic_version",
+        version_table_schema="users",
+    )
     with context.begin_transaction():
         context.run_migrations()
 

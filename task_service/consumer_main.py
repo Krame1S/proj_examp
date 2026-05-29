@@ -2,12 +2,12 @@ import asyncio
 import logging
 
 from shared.log.setup import setup_logging
-from src.broker.consumer import rpc_consumer
+from task_service.broker.consumer import rpc_consumer
 from shared.broker.queues import ConsumerQueue
 from shared.broker.exchanges import ResponseExchange
-from src.broker.consumer_processor import ConsumerProcessor
-from src.core.config import settings
-from src.core.database import close_db_pool
+from task_service.core.config import settings
+from task_service.core.database import close_db_pool
+from task_service.broker.consumer_processor import ConsumerProcessor
 
 
 async def main() -> None:

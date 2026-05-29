@@ -1,0 +1,78 @@
+import logging
+
+import redis.asyncio as redis
+from asyncpg.exceptions import UniqueViolationError
+
+from user_service.core.config import settings
+from user_service.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
+    hash_password,
+    store_refresh_token,
+    verify_password,
+)
+from user_service.exceptions.auth import AccountDeactivated, EmailAlreadyRegistered, InvalidCredentials, InvalidRefreshToken
+from user_service.repository.user import UserRepository
+from user_service.core.database import get_db_pool
+
+from user_service.schemas.auth import SignInRequest, SignUpRequest, TokenPair
+
+logger = logging.getLogger(__name__)
+
+
+class AuthService:
+    def __init__(self, repository: UserRepository, redis_client: redis.Redis):
+        self.repository = repository
+        self.redis = redis_client
+
+    @classmethod
+    async def create(cls) -> "AuthService":
+        pool = await get_db_pool()
+        redis_client = redis.Redis.from_url(settings.REDIS_URL)
+        return cls(UserRepository(pool), redis_client)
+
+    async def sign_up(self, request: SignUpRequest) -> TokenPair:
+        hashed = hash_password(request.password)
+        try:
+            user = await self.repository.create(request.email, hashed)
+        except UniqueViolationError as e:
+            raise EmailAlreadyRegistered() from e
+
+        access = create_access_token(user["id"])
+        refresh = create_refresh_token(user["id"])
+        await store_refresh_token(user["id"], refresh, self.redis)
+
+        return TokenPair(access_token=access, refresh_token=refresh)
+
+
+    async def sign_in(self, request: SignInRequest) -> TokenPair:
+        user = await self.repository.get_by_email(request.email)
+        if not user:
+            raise InvalidCredentials()
+
+        if not verify_password(request.password, user["password_hash"]):
+            raise InvalidCredentials()
+
+        if not user["is_active"]:
+            raise AccountDeactivated()
+
+        access = create_access_token(user["id"])
+        refresh = create_refresh_token(user["id"])
+        await store_refresh_token(user["id"], refresh, self.redis)
+
+        return TokenPair(access_token=access, refresh_token=refresh)
+
+
+    async def refresh(self, refresh_token: str) -> TokenPair:
+        try:
+            user_id = await decode_refresh_token(refresh_token, self.redis)
+        except Exception as e:
+            logger.warning("Invalid refresh token attempt", exc_info=True)
+            raise InvalidRefreshToken() from e
+
+        access = create_access_token(user_id)
+        refresh = create_refresh_token(user_id)
+        await store_refresh_token(user_id, refresh, self.redis)
+
+        return TokenPair(access_token=access, refresh_token=refresh)

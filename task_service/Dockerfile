@@ -12,6 +12,6 @@ RUN pip install poetry --no-cache-dir && \
 
 COPY task_service/ .
 
-ENV PYTHONPATH="/app/shared/src"
+ENV PYTHONPATH="/app:/app/shared/src"
 
 CMD ["python", "consumer_main.py"]

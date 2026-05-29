@@ -1,0 +1,17 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY shared/ /app/shared/
+
+COPY comment_service/pyproject.toml comment_service/poetry.lock* ./
+
+RUN pip install poetry --no-cache-dir && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi --without dev
+
+COPY comment_service/ .
+
+ENV PYTHONPATH="/app:/app/shared/src"
+
+CMD ["python", "consumer_main.py"]

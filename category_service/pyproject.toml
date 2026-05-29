@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "category-service"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <your@email.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+asyncpg = "^0.31"
+sqlalchemy = "^2.0"
+alembic = "^1.14"
+pydantic = "^2.10"
+pydantic-settings = "^2.7"
+aio-pika = "^9.6.2"
+redis = "^5.2"
+colorama = "^0.4"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

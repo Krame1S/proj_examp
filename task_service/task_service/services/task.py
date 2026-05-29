@@ -1,0 +1,174 @@
+from typing import Optional
+
+from task_service.core.database import get_db_pool
+from task_service.exceptions.category import CategoryNotFound
+from task_service.exceptions.tag import TagNotFound
+from task_service.exceptions.task import TaskNotFound
+from task_service.repository.category import CategoryRepository
+from task_service.repository.task import TaskRepository
+from task_service.schemas.task import TaskIn, TaskOut, TaskUpdate, GetTaskResponse
+from task_service.models.task import TaskStatus
+
+
+class TaskService:
+    def __init__(
+        self,
+        task_repository: TaskRepository,
+        category_repository: CategoryRepository,
+    ):
+        self.task_repository = task_repository
+        self.category_repository = category_repository
+
+    @classmethod
+    async def create(cls) -> "TaskService":
+        pool = await get_db_pool()
+        return cls(
+            task_repository=TaskRepository(pool),
+            category_repository=CategoryRepository(pool),
+        )
+
+
+    async def _get_task_or_raise(self, task_id: int, owner_id: int) -> dict:
+        task = await self.task_repository.get_task_by_id(task_id, owner_id)
+        if task is None:
+            raise TaskNotFound()
+        return task
+
+
+    async def _validate_category_belongs_to_user(self, category_id: Optional[int], user_id: int) -> None:
+        if category_id is None:
+            return
+        category = await self.category_repository.get_by_id(category_id, user_id)
+        if category is None:
+            raise CategoryNotFound()
+
+
+    async def create_task(self, task_in: TaskIn, owner_id: int) -> TaskOut:
+        await self._validate_category_belongs_to_user(task_in.category_id, owner_id)
+
+        if task_in.tags:
+            valid_ids = await self.task_repository.get_valid_tag_ids(task_in.tags, owner_id)
+            if len(valid_ids) != len(task_in.tags):
+                raise TagNotFound()
+
+        record = await self.task_repository.create_task(
+            title=task_in.title,
+            description=task_in.description,
+            owner_id=owner_id,
+            category_id=task_in.category_id,
+            status=task_in.status.value,
+        )
+
+        if record is None:
+            raise RuntimeError("Task creation failed - unexpected error")
+
+        if task_in.tags:
+            await self.task_repository.set_tags_on_task(
+                task_id=record["id"],
+                owner_id=owner_id,
+                tag_ids=task_in.tags,
+            )
+            record = await self.task_repository.get_task_by_id(record["id"], owner_id)
+            if record is None:
+                raise RuntimeError("Task not found after creation")
+
+        return TaskOut.from_db_row(record)
+
+
+    async def list_tasks(
+        self,
+        owner_id: int,
+        limit: int,
+        category_id: Optional[int] = None,
+        tag_ids: Optional[list[int]] = None,
+        status_filter: Optional["TaskStatus"] = None,
+    ) -> GetTaskResponse:
+
+        fetch_limit = limit + 1
+        status_value = status_filter.value if status_filter else None
+
+        if tag_ids:
+            records = await self.task_repository.list_all_tasks_by_tags(
+                owner_id=owner_id,
+                tag_ids=tag_ids,
+                limit=fetch_limit,
+                status=status_value,
+            )
+        elif category_id is not None:
+            await self._validate_category_belongs_to_user(category_id, owner_id)
+            records = await self.task_repository.list_all_tasks_by_category(
+                owner_id=owner_id,
+                category_id=category_id,
+                limit=fetch_limit,
+                status=status_value,
+            )
+        else:
+            records = await self.task_repository.list_all_tasks(
+                owner_id=owner_id,
+                limit=fetch_limit,
+                status=status_value,
+            )
+
+        has_more = len(records) > limit
+        tasks = records[:limit]
+
+        return GetTaskResponse(
+            tasks=[TaskOut.from_db_row(r) for r in tasks],
+            has_more=has_more,
+        )
+
+
+    async def get_task_by_id(self, owner_id: int, task_id: int) -> TaskOut:
+        record = await self._get_task_or_raise(task_id, owner_id)
+        return TaskOut.from_db_row(record)
+
+
+    async def patch_task(
+        self,
+        task_id: int,
+        update_data: TaskUpdate,
+        user_id: int,
+    ) -> TaskOut:
+        task = await self._get_task_or_raise(task_id, user_id)
+
+        changes = update_data.model_dump(exclude_unset=True)
+        if not changes:
+            return TaskOut.from_db_row(task)
+
+        if "category_id" in changes:
+            await self._validate_category_belongs_to_user(changes["category_id"], user_id)
+
+        if "tags" in changes:
+            tag_ids = changes.pop("tags")
+            valid_ids = await self.task_repository.get_valid_tag_ids(tag_ids, user_id)
+            if len(valid_ids) != len(tag_ids):
+                raise TagNotFound()
+            await self.task_repository.set_tags_on_task(
+                task_id=task_id,
+                owner_id=user_id,
+                tag_ids=tag_ids,
+            )
+
+        if changes:
+            updated = await self.task_repository.patch_task(
+                task_id=task_id,
+                title=changes.get("title"),
+                description=changes.get("description"),
+                category_id=changes.get("category_id"),
+                status=changes["status"].value if changes.get("status") is not None else None,
+            )
+            if updated is None:
+                raise TaskNotFound()
+            return TaskOut.from_db_row(updated)
+
+        record = await self.task_repository.get_task_by_id(task_id, user_id)
+        if record is None:
+            raise TaskNotFound()
+        return TaskOut.from_db_row(record)
+
+
+    async def delete_task(self, task_id: int, user_id: int) -> None:
+        await self._get_task_or_raise(task_id, user_id)
+        deleted = await self.task_repository.delete_task(task_id)
+        if not deleted:
+            raise TaskNotFound()
