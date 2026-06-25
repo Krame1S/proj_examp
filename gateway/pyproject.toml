@@ -16,6 +16,14 @@ email-validator = "^2.2"
 redis = "^5.2"
 prometheus-client = "^0.21"
 colorama = "^0.4"
+python-multipart = "^0.0.20"
+aiobotocore = { version = "^2.13", extras = ["boto3"] }
+tenacity = "^9.0"
+sse-starlette = "^2.1"
+opentelemetry-api = "^1.25"
+opentelemetry-sdk = "^1.25"
+opentelemetry-exporter-otlp-proto-grpc = "^1.25"
+opentelemetry-instrumentation-starlette = "^0.46b0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11"
@@ -23,3 +31,40 @@ ruff = "^0.11"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+exclude = [
+    ".env",
+    ".git",
+]
+line-length = 120
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+extend-select = [
+    "E",
+    "C",
+    "F",
+    "I",
+    "N",
+    "UP",
+    "TRY",
+    "FURB",
+    "PLW",
+    "C4",
+    "B",
+    "RSE",
+    "SIM",
+    "C90",
+]
+ignore = ["TRY003", "TRY301"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 6

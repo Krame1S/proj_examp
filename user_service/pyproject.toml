@@ -9,7 +9,7 @@ package-mode = false
 python = "^3.12"
 # Database
 asyncpg = "^0.31"
-sqlalchemy = "^2.0" # нужен ТОЛЬКО для Alembic autogenerate, не для запросов
+sqlalchemy = "^2.0"
 alembic = "^1.14"
 # Auth
 pyjwt = { version = "^2.10", extras = ["crypto"] }
@@ -25,6 +25,11 @@ aio-pika = "^9.6.2"
 colorama = "^0.4"
 # Redis
 redis = "^5.2"
+# Tracing
+opentelemetry-api = "^1.25"
+opentelemetry-sdk = "^1.25"
+opentelemetry-exporter-otlp-proto-grpc = "^1.25"
+opentelemetry-instrumentation-asyncpg = "^0.63b1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11"
@@ -37,3 +42,40 @@ build-backend = "poetry.core.masonry.api"
 python_version = "3.12"
 ignore_missing_imports = true
 mypy_path = "../shared/src"
+
+
+[tool.ruff]
+exclude = [
+    ".env",
+    ".git",
+]
+line-length = 120
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+extend-select = [
+    "E",
+    "C",
+    "F",
+    "I",
+    "N",
+    "UP",
+    "TRY",
+    "FURB",
+    "PLW",
+    "C4",
+    "B",
+    "RSE",
+    "SIM",
+    "C90",
+]
+ignore = ["TRY003", "TRY301"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 6

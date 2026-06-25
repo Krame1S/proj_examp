@@ -1,8 +1,14 @@
+from enum import StrEnum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from task_service.models.task import TaskStatus
+
+class TaskStatus(StrEnum):
+    todo = "todo"
+    in_progress = "in_progress"
+    done = "done"
+    cancelled = "cancelled"
 
 
 class TaskIn(BaseModel):
@@ -11,6 +17,7 @@ class TaskIn(BaseModel):
     category_id: Optional[int] = Field(None, ge=1)
     tags: list[int] = Field(default_factory=list)
     status: TaskStatus = TaskStatus.todo
+
 
 class TaskListRequest(BaseModel):
     user_id: int
@@ -54,6 +61,7 @@ class TaskOut(BaseModel):
             created_at=row["created_at"].isoformat() if row["created_at"] else None,
             updated_at=row["updated_at"].isoformat() if row["updated_at"] else None,
         )
+
 
 class GetTaskResponse(BaseModel):
     tasks: list[TaskOut]
