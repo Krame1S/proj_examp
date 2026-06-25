@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body, HTTPException, status
  
 from gateway.broker.rpc_publisher import rpc_publisher
-from gateway.schemas.auth import RefreshRequest, SignInRequest, SignUpRequest, TokenPair
+from shared.contracts.auth.contracts import RefreshRequest, SignInRequest, SignUpRequest, TokenPair
 from shared.broker.queues import ConsumerQueue
 
 

@@ -2,7 +2,7 @@
 
 import sqlalchemy as sa
 
-from category_service.models.base import Base, TimestampMixin
+from shared.models.base import Base, TimestampMixin
 from sqlalchemy.orm import Mapped, mapped_column
 
 

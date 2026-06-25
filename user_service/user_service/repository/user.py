@@ -1,5 +1,5 @@
 from typing import Any, Dict, Optional
-from user_service.repository.base import BaseRepository
+from shared.repository.base import BaseRepository
 
 
 class UserRepository(BaseRepository):

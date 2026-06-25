@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 import sqlalchemy as sa
 
-from user_service.models.base import Base
+from shared.models.base import Base
 from user_service.models import user  # noqa: F401 — импорт нужен чтобы Base.metadata увидела модель
 
 config = context.config

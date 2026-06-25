@@ -5,7 +5,7 @@ import enum
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from task_service.models.base import Base, TimestampMixin
+from shared.models.base import Base, TimestampMixin
 
 
 class TaskStatus(str, enum.Enum):

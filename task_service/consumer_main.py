@@ -2,16 +2,20 @@ import asyncio
 import logging
 
 from shared.log.setup import setup_logging
+from shared.metrics.setup import setup_tracing
 from task_service.broker.consumer import rpc_consumer
 from shared.broker.queues import ConsumerQueue
 from shared.broker.exchanges import ResponseExchange
 from task_service.core.config import settings
-from task_service.core.database import close_db_pool
+from task_service.core.database import close_db_pool, close_redis_client
 from task_service.broker.consumer_processor import ConsumerProcessor
+from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
 
 async def main() -> None:
     setup_logging(level=settings.LOGGING_LEVEL)
+    setup_tracing(service_name="task_service")
+    AsyncPGInstrumentor().instrument()
     logger = logging.getLogger(__name__)
     logger.info("Starting task_service RPC consumer")
 
@@ -44,6 +48,7 @@ async def main() -> None:
             ))
     finally:
         await close_db_pool()
+        await close_redis_client()
 
 
 if __name__ == "__main__":

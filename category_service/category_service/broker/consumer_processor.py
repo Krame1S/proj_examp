@@ -1,8 +1,8 @@
 import json
 import logging
 
-from category_service.exceptions.base import AppException
-from category_service.schemas.category import (
+from shared.exceptions.base import AppException
+from shared.contracts.category.contracts import (
     CategoryCreate,
     CategoryListRequest,
     CategoryListResponse,

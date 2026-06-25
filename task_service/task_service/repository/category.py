@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional
-from task_service.repository.base import BaseRepository
+from shared.repository.base import BaseRepository
 
 
 class CategoryRepository(BaseRepository):

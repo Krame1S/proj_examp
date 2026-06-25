@@ -3,7 +3,7 @@ from comment_service.exceptions.comment import CommentNotFound
 from comment_service.exceptions.task import TaskNotFound
 from comment_service.repository.comment import CommentRepository
 from comment_service.repository.task import TaskRepository
-from comment_service.schemas.comment import CommentIn, CommentOut
+from shared.contracts.comment.contracts import CommentIn, CommentOut
 
 
 class CommentService:

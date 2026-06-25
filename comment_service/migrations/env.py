@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 import sqlalchemy as sa
 
-from comment_service.models.base import Base
+from shared.models.base import Base
 from comment_service.models import comment  # noqa: F401
 
 config = context.config

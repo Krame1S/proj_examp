@@ -3,7 +3,7 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
-from task_service.models.base import Base
+from shared.models.base import Base
 
 
 class TaskTag(Base):

@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 import sqlalchemy as sa
 
-from category_service.models.base import Base
+from shared.models.base import Base
 from category_service.models import category  # type: ignore # noqa: F401
 
 config = context.config

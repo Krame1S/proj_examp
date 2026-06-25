@@ -8,10 +8,14 @@ from shared.broker.exchanges import ResponseExchange
 from comment_service.core.config import settings
 from comment_service.core.database import close_db_pool
 from comment_service.broker.consumer_processor import ConsumerProcessor
+from shared.metrics.setup import setup_tracing
+from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
 
 async def main() -> None:
     setup_logging(level=settings.LOGGING_LEVEL)
+    setup_tracing(service_name="comment_service")
+    AsyncPGInstrumentor().instrument()
     logger = logging.getLogger(__name__)
     logger.info("Starting comment_service RPC consumer")
 

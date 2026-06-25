@@ -2,8 +2,8 @@ import json
 import logging
 
 from user_service.exceptions.auth import AuthServiceError, EmailAlreadyRegistered
-from user_service.exceptions.base import AppException
-from user_service.schemas.auth import RefreshRequest, SignInRequest, SignUpRequest
+from shared.exceptions.base import AppException
+from shared.contracts.auth.contracts import RefreshRequest, SignInRequest, SignUpRequest
 from user_service.services.auth import AuthService
 from user_service.services.user import UserService
 

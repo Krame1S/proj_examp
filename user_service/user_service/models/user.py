@@ -6,7 +6,7 @@ Queries go through UserRepository (asyncpg raw SQL).
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
-from user_service.models.base import Base, TimestampMixin
+from shared.models.base import Base, TimestampMixin
 
 
 class User(TimestampMixin, Base):

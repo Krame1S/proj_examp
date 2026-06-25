@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional
-from comment_service.repository.base import BaseRepository
+from shared.repository.base import BaseRepository
 
 
 class CommentRepository(BaseRepository):

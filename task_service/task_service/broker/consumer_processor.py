@@ -1,8 +1,8 @@
 import json
 import logging
 
-from task_service.exceptions.base import AppException
-from task_service.schemas.task import TaskIn, TaskListRequest, TaskUpdate
+from shared.exceptions.base import AppException
+from shared.contracts.task.contracts import TaskIn, TaskListRequest, TaskUpdate
 from task_service.services.task import TaskService
 
 logger = logging.getLogger(__name__)

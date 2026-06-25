@@ -1,4 +1,4 @@
-from .base import AppException
+from shared.exceptions.base import AppException
 
 
 class CategoryNotFound(AppException):

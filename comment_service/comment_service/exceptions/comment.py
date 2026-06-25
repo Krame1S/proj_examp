@@ -1,4 +1,7 @@
-from .base import AppException
+from shared.exceptions.base import AppException
+
+class CommentServiceError(AppException):
+    pass
 
 class CommentNotFound(AppException):
     status_code = 404

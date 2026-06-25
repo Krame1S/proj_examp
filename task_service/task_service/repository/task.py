@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional
-from task_service.repository.base import BaseRepository
+from shared.repository.base import BaseRepository
 
 
 class TaskRepository(BaseRepository):
@@ -262,3 +262,19 @@ class TaskRepository(BaseRepository):
             owner_id,
         )
         return [r["id"] for r in records]
+
+
+    async def get_status_counts(self, owner_id: int) -> dict:
+        records = await self.fetch_all(
+            """
+            SELECT status, COUNT(*) as count
+            FROM task
+            WHERE owner_id = $1
+            GROUP BY status
+            """,
+            owner_id,
+        )
+        counts = {"todo": 0, "in_progress": 0, "done": 0, "cancelled": 0}
+        for r in records:
+            counts[r["status"]] = r["count"]
+        return counts

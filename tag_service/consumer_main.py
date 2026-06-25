@@ -2,16 +2,20 @@ import asyncio
 import logging
 
 from shared.log.setup import setup_logging
+from shared.metrics.setup import setup_tracing
 from tag_service.broker.consumer import rpc_consumer
 from shared.broker.queues import ConsumerQueue
 from shared.broker.exchanges import ResponseExchange
 from tag_service.core.config import settings
 from tag_service.core.database import close_db_pool
 from tag_service.broker.consumer_processor import ConsumerProcessor
+from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
 
 async def main() -> None:
     setup_logging(level=settings.LOGGING_LEVEL)
+    setup_tracing(service_name="tag_service")
+    AsyncPGInstrumentor().instrument()
     logger = logging.getLogger(__name__)
     logger.info("Starting tag_service RPC consumer")
 

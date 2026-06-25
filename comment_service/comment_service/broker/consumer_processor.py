@@ -1,8 +1,8 @@
 import json
 import logging
 
-from comment_service.exceptions.base import AppException
-from comment_service.schemas.comment import CommentIn
+from shared.exceptions.base import AppException
+from shared.contracts.comment.contracts import CommentIn
 from comment_service.services.comment import CommentService
 
 logger = logging.getLogger(__name__)

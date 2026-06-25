@@ -6,26 +6,31 @@ from task_service.exceptions.tag import TagNotFound
 from task_service.exceptions.task import TaskNotFound
 from task_service.repository.category import CategoryRepository
 from task_service.repository.task import TaskRepository
-from task_service.schemas.task import TaskIn, TaskOut, TaskUpdate, GetTaskResponse
+from shared.contracts.task.contracts import TaskIn, TaskOut, TaskUpdate, GetTaskResponse
 from task_service.models.task import TaskStatus
+from task_service.core.database import get_db_pool, get_redis_client
+from shared.broker.pubsub import pubsub_publish
 
 
 class TaskService:
-    def __init__(
-        self,
-        task_repository: TaskRepository,
-        category_repository: CategoryRepository,
-    ):
+    def __init__(self, task_repository, category_repository, redis_client):
         self.task_repository = task_repository
         self.category_repository = category_repository
+        self.redis_client = redis_client
 
     @classmethod
     async def create(cls) -> "TaskService":
         pool = await get_db_pool()
+        redis_client = await get_redis_client()
         return cls(
             task_repository=TaskRepository(pool),
             category_repository=CategoryRepository(pool),
+            redis_client=redis_client,
         )
+
+    async def _publish_dashboard(self, owner_id: int) -> None:
+        counts = await self.task_repository.get_status_counts(owner_id)
+        await pubsub_publish(f"dashboard:{owner_id}", counts, self.redis_client)
 
 
     async def _get_task_or_raise(self, task_id: int, owner_id: int) -> dict:
@@ -71,6 +76,8 @@ class TaskService:
             record = await self.task_repository.get_task_by_id(record["id"], owner_id)
             if record is None:
                 raise RuntimeError("Task not found after creation")
+
+        await self._publish_dashboard(owner_id)
 
         return TaskOut.from_db_row(record)
 
@@ -159,11 +166,14 @@ class TaskService:
             )
             if updated is None:
                 raise TaskNotFound()
+            await self._publish_dashboard(user_id)
             return TaskOut.from_db_row(updated)
 
         record = await self.task_repository.get_task_by_id(task_id, user_id)
         if record is None:
             raise TaskNotFound()
+
+        await self._publish_dashboard(user_id)
         return TaskOut.from_db_row(record)
 
 
@@ -172,3 +182,4 @@ class TaskService:
         deleted = await self.task_repository.delete_task(task_id)
         if not deleted:
             raise TaskNotFound()
+        await self._publish_dashboard(user_id)

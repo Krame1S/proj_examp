@@ -16,7 +16,7 @@ from user_service.exceptions.auth import AccountDeactivated, EmailAlreadyRegiste
 from user_service.repository.user import UserRepository
 from user_service.core.database import get_db_pool
 
-from user_service.schemas.auth import SignInRequest, SignUpRequest, TokenPair
+from shared.contracts.auth.contracts import SignInRequest, SignUpRequest, TokenPair
 
 logger = logging.getLogger(__name__)
 

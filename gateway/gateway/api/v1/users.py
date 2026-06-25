@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, status
 from gateway.api.deps import get_current_user_id
 from gateway.broker.rpc_publisher import rpc_publisher
-from gateway.schemas.user import UserProfile, UserUpdate
+from shared.contracts.auth.contracts import UserProfile, UserUpdate
 from shared.broker.queues import ConsumerQueue
 
 router = APIRouter(prefix="/users", tags=["users"])

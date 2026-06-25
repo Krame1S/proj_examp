@@ -8,10 +8,14 @@ from shared.broker.exchanges import ResponseExchange
 from category_service.core.config import settings
 from category_service.core.database import close_db_pool
 from category_service.broker.consumer_processor import ConsumerProcessor
+from shared.metrics.setup import setup_tracing
+from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
 
 async def main() -> None:
     setup_logging(level=settings.LOGGING_LEVEL)
+    setup_tracing(service_name="category_service")
+    AsyncPGInstrumentor().instrument()
     logger = logging.getLogger(__name__)
     logger.info("Starting category_service RPC consumer")
 

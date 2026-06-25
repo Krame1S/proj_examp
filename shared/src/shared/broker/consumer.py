@@ -5,8 +5,6 @@ from aio_pika import ExchangeType, Message, connect
 from aio_pika.abc import AbstractIncomingMessage
 from shared.broker.exchanges import ResponseExchange
 
-from user_service.core.config import settings
-
 
 class RpcConsumer:
     """Потребитель для обработки RPC-запросов."""
@@ -45,6 +43,3 @@ class RpcConsumer:
                         ),
                         routing_key=reply_to,
                     )
-
-
-rpc_consumer = RpcConsumer(amqp_url=settings.RABBIT_AMQP)

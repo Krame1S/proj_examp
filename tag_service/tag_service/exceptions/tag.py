@@ -1,4 +1,4 @@
-from tag_service.exceptions.base import AppException
+from shared.exceptions.base import AppException
 
 class TagServiceError(AppException):
     pass

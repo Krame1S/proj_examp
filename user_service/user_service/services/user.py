@@ -3,7 +3,7 @@ from asyncpg.exceptions import UniqueViolationError
 from user_service.core.database import get_db_pool
 from user_service.exceptions.user import EmailAlreadyTaken, UserNotFound
 from user_service.repository.user import UserRepository
-from user_service.schemas.user import UserProfile
+from shared.contracts.auth.contracts import UserProfile
 
 
 class UserService:

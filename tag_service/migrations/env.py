@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 import sqlalchemy as sa
 
-from tag_service.models.base import Base
+from shared.models.base import Base
 from tag_service.models import tag  # type: ignore # noqa: F401
 
 

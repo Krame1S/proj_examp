@@ -1,4 +1,4 @@
-from category_service.exceptions.base import AppException
+from shared.exceptions.base import AppException
 
 
 class CategoryServiceError(AppException):

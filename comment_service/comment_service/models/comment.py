@@ -1,7 +1,6 @@
 """SQLAlchemy Comment model — used for Alembic migration generation."""
 
-from comment_service.models.base import Base
-from comment_service.models.base import TimestampMixin
+from shared.models.base import Base, TimestampMixin
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 

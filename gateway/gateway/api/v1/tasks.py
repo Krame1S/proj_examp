@@ -1,6 +1,6 @@
 import json
 from gateway.api.deps import get_current_user_id
-from gateway.schemas.task import TaskIn, TaskOut, TaskStatus, TaskUpdate, GetTaskResponse
+from shared.contracts.task.contracts import TaskIn, TaskOut, TaskStatus, TaskUpdate, GetTaskResponse
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Path, status
 from gateway.broker.rpc_publisher import rpc_publisher
 from shared.broker.queues import ConsumerQueue

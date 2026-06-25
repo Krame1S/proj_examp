@@ -3,7 +3,7 @@ from typing import Optional
 from category_service.core.database import get_db_pool
 from category_service.exceptions.category import CategoryAlreadyExists, CategoryNotFound
 from category_service.repository.category import CategoryRepository
-from category_service.schemas.category import CategoryCreate, CategoryOut, CategoryUpdate
+from shared.contracts.category.contracts import CategoryCreate, CategoryOut, CategoryUpdate
 
 
 class CategoryService:

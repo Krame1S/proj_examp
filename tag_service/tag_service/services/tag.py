@@ -1,6 +1,6 @@
 from tag_service.core.database import get_db_pool
 from tag_service.repository.tag import TagRepository
-from tag_service.schemas.tag import TagCreate, TagOut, TagUpdate
+from shared.contracts.tag.contracts import TagCreate, TagOut, TagUpdate
 from tag_service.exceptions.tag import TagAlreadyExists, TagNotFound
 
 

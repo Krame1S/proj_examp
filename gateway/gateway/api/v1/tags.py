@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from gateway.api.deps import get_current_user_id
 from gateway.broker.rpc_publisher import rpc_publisher
-from gateway.schemas.tag import TagCreate, TagOut, TagUpdate
+from shared.contracts.tag.contracts import TagCreate, TagOut, TagUpdate
 from shared.broker.queues import ConsumerQueue
 
 router = APIRouter(prefix="/tags", tags=["tags"])

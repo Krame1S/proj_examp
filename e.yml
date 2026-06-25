@@ -1,0 +1,61 @@
+[1mdiff --git a/gateway/main.py b/gateway/main.py[m
+[1mindex b09f8c3..cd99a04 100644[m
+[1m--- a/gateway/main.py[m
+[1m+++ b/gateway/main.py[m
+[36m@@ -3,6 +3,7 @@[m [mfrom contextlib import asynccontextmanager[m
+ [m
+ from fastapi import FastAPI[m
+ from fastapi.middleware.cors import CORSMiddleware[m
+[32m+[m[32mfrom prometheus_client import make_asgi_app[m
+ [m
+ from gateway.api.errors import register_error_handlers[m
+ from gateway.api.v1.router import v1_router[m
+[36m@@ -10,21 +11,20 @@[m [mfrom gateway.broker.rpc_publisher import rpc_publisher[m
+ from gateway.core.config import settings[m
+ from gateway.core.security import load_public_key[m
+ from gateway.middleware.logging import LoggingMiddleware[m
+[32m+[m[32mfrom gateway.middleware.metrics import MetricsMiddleware[m
+[32m+[m[32mfrom shared.metrics.tracing import TracingMiddleware[m
+[32m+[m[32mfrom shared.metrics.setup import setup_tracing[m
+ from shared.broker.exchanges import ResponseExchange[m
+ from shared.broker.queues import ResponseQueue[m
+[31m-[m
+[31m-[m
+[31m-def setup_logging() -> None:[m
+[31m-    logging.basicConfig([m
+[31m-        level=settings.LOGGING_LEVEL,[m
+[31m-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",[m
+[31m-    )[m
+[32m+[m[32mfrom shared.log.setup import setup_logging[m
+ [m
+ [m
+ @asynccontextmanager[m
+ async def lifespan(app: FastAPI):[m
+     # ── Startup ──────────────────────────────────────[m
+[31m-    setup_logging()[m
+[32m+[m[32m    setup_logging(level=settings.LOGGING_LEVEL)[m
+[32m+[m[32m    if settings.ENABLE_TRACING:[m
+[32m+[m[32m        setup_tracing(service_name="gateway")[m
+     load_public_key(settings.JWT_PUBLIC_KEY_PATH) [m
+ [m
+     await rpc_publisher.connect([m
+[36m@@ -53,6 +53,16 @@[m [mapp.add_middleware([m
+     allow_headers=["*"],[m
+ )[m
+ [m
+[32m+[m[32mif settings.ENABLE_METRICS:[m
+[32m+[m[32m    app.add_middleware(MetricsMiddleware)[m
+[32m+[m
+[32m+[m[32mif settings.ENABLE_TRACING:[m
+[32m+[m[32m    app.add_middleware(TracingMiddleware)[m
+[32m+[m
+ app.add_middleware(LoggingMiddleware)[m
+ [m
+[31m-app.include_router(v1_router, prefix="/api")[m
+\ No newline at end of file[m
+[32m+[m[32mapp.include_router(v1_router, prefix="/api")[m
+[32m+[m
+[32m+[m[32mif settings.ENABLE_METRICS:[m
+[32m+[m[32m    metrics_app = make_asgi_app()[m
+[32m+[m[32m    app.mount("/metrics", metrics_app)[m
+\ No newline at end of file[m

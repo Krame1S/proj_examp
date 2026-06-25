@@ -2,8 +2,8 @@ import json
 import logging
 
 from tag_service.services.tag import TagService
-from tag_service.schemas.tag import TagCreate, TagUpdate
-from tag_service.exceptions.base import AppException
+from shared.contracts.tag.contracts import TagCreate, TagUpdate
+from shared.exceptions.base import AppException
 
 logger = logging.getLogger(__name__)
 
