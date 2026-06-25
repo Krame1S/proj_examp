@@ -17,6 +17,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -29,6 +30,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 5s
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -41,21 +43,20 @@ services:
     volumes:
       - rabbitmqdata:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 5s
-      timeout: 5s
+      timeout: 10s
       retries: 10
+      start_period: 15s
 
   # ── Migrations ───────────────────────────────────────────────────────
 
-  migrate:
+  migrate_user:
     build:
       context: .
       dockerfile: user_service/Dockerfile
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
-    env_file:
-      - user_service/.env
     command: sh -c "alembic upgrade head"
     depends_on:
       postgres:
@@ -93,10 +94,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
   migrate_comment:
     build:
       context: .
       dockerfile: comment_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate_attachment:
+    build:
+      context: .
+      dockerfile: attachment_service/Dockerfile
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
     command: sh -c "alembic upgrade head"
@@ -117,12 +130,13 @@ services:
       REDIS_URL: redis://redis:6379/0
       LOGGING_LEVEL: INFO
       CORS_ORIGINS: "*"
-    restart: on-failure
+      ENABLE_TRACING: "true"
+      MOCK_S3: "true"
+    restart: always
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - rabbitmq
+      - redis
+      - jaeger
 
   # ── User Service ─────────────────────────────────────────────────────
 
@@ -137,16 +151,12 @@ services:
       LOGGING_LEVEL: INFO
       JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
-    restart: on-failure
+    restart: always
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
+      - rabbitmq
+      - postgres
+      - redis
+      - migrate_user
 
   # ── Task Service ─────────────────────────────────────────────────────
 
@@ -157,15 +167,13 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
       RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
       LOGGING_LEVEL: INFO
-    restart: on-failure
+    restart: always
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      migrate_task:
-        condition: service_completed_successfully
+      - rabbitmq
+      - postgres
+      - migrate_task
 
   # ── Category Service ─────────────────────────────────────────────────
 
@@ -177,14 +185,11 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
       RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
       LOGGING_LEVEL: INFO
-    restart: on-failure
+    restart: always
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      migrate_category:
-        condition: service_completed_successfully
+      - rabbitmq
+      - postgres
+      - migrate_category
 
   # ── Tag Service ──────────────────────────────────────────────────────
 
@@ -196,14 +201,11 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
       RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
       LOGGING_LEVEL: INFO
-    restart: on-failure
+    restart: always
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      migrate_tag:
-        condition: service_completed_successfully
+      - rabbitmq
+      - postgres
+      - migrate_tag
 
   comment_service:
     build:
@@ -213,45 +215,80 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
       RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
       LOGGING_LEVEL: INFO
-    restart: on-failure
+    restart: always
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      migrate_comment:
-        condition: service_completed_successfully
+      - rabbitmq
+      - postgres
+      - migrate_comment
+
+  attachment_service:
+    build:
+      context: .
+      dockerfile: attachment_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+      MOCK_S3: "true" 
+    restart: always
+    depends_on:
+      - rabbitmq
+      - postgres
+      - migrate_attachment
+
 
   # ── Observability (опционально, можно закомментировать для быстрого теста) ──
 
-  # jaeger:
-  #   image: jaegertracing/all-in-one:1.58
-  #   environment:
-  #     COLLECTOR_OTLP_ENABLED: "true"
-  #   ports:
-  #     - "16686:16686"
-  #     - "4317:4317"
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+    volumes:
+      - jaegerdata:/data
 
-  # prometheus:
-  #   image: prom/prometheus:v2.53.0
-  #   ports:
-  #     - "9090:9090"
-  #   volumes:
-  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-  #     - prometheusdata:/prometheus
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheusdata:/prometheus
 
-  # grafana:
-  #   image: grafana/grafana:11.1.0
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     GF_SECURITY_ADMIN_PASSWORD: admin
-  #   volumes:
-  #     - grafanadata:/var/lib/grafana
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafanadata:/var/lib/grafana
+
+  loki:
+    image: grafana/loki:2.9.0
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - lokidata:/loki
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
 
 volumes:
   pgdata:
   redisdata:
   rabbitmqdata:
-  # prometheusdata:
-  # grafanadata:
+  prometheusdata:
+  grafanadata:
+  jaegerdata:
+  lokidata:

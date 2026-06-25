@@ -3,7 +3,7 @@ import logging.handlers
 import queue
 
 from colorama import Fore, Style
-
+from opentelemetry import trace
 
 LEVEL_COLORS = {
     logging.DEBUG: Fore.CYAN,
@@ -13,20 +13,25 @@ LEVEL_COLORS = {
     logging.CRITICAL: Fore.RED + Style.BRIGHT,
 }
 
+class TraceContextFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        ctx = trace.get_current_span().get_span_context()
+        record.trace_id = format(ctx.trace_id, "032x") if ctx.is_valid else ""
+        return True
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         color = LEVEL_COLORS.get(record.levelno, "")
         reset = Style.RESET_ALL
         level = f"{color}{record.levelname:<8}{reset}"
-        return f"{level} [{record.name} - {self.formatTime(record)}] {record.getMessage()}"
-
+        trace_val = getattr(record, "trace_id", "")
+        trace_id = f" trace={trace_val}" if trace_val else ""
+        return f"{level} [{record.name} - {self.formatTime(record)}]{trace_id} {record.getMessage()}"
 
 def setup_logging(level: str = "INFO") -> None:
-
-    """Configure async queue-based logging with colored console output."""
     log_queue: queue.Queue = queue.Queue()
     queue_handler = logging.handlers.QueueHandler(log_queue)
+    queue_handler.addFilter(TraceContextFilter())
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(ColoredFormatter())
@@ -38,6 +43,5 @@ def setup_logging(level: str = "INFO") -> None:
     root.setLevel(getattr(logging, level, logging.INFO))
     root.addHandler(queue_handler)
 
-    # Suppress noisy third-party loggers
-    for name in ("asyncpg",):
+    for name in ("asyncpg", "uvicorn.access"):
         logging.getLogger(name).setLevel(logging.WARNING)

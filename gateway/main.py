@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import make_asgi_app
 
 from gateway.api.errors import register_error_handlers
 from gateway.api.v1.router import v1_router
@@ -10,21 +11,20 @@ from gateway.broker.rpc_publisher import rpc_publisher
 from gateway.core.config import settings
 from gateway.core.security import load_public_key
 from gateway.middleware.logging import LoggingMiddleware
+from gateway.middleware.metrics import MetricsMiddleware
+from shared.metrics.tracing import TracingMiddleware
+from shared.metrics.setup import setup_tracing
 from shared.broker.exchanges import ResponseExchange
 from shared.broker.queues import ResponseQueue
-
-
-def setup_logging() -> None:
-    logging.basicConfig(
-        level=settings.LOGGING_LEVEL,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    )
+from shared.log.setup import setup_logging
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────────────────
-    setup_logging()
+    setup_logging(level=settings.LOGGING_LEVEL)
+    if settings.ENABLE_TRACING:
+        setup_tracing(service_name="gateway")
     load_public_key(settings.JWT_PUBLIC_KEY_PATH) 
 
     await rpc_publisher.connect(
@@ -53,6 +53,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+if settings.ENABLE_METRICS:
+    app.add_middleware(MetricsMiddleware)
+
+if settings.ENABLE_TRACING:
+    app.add_middleware(TracingMiddleware)
+
 app.add_middleware(LoggingMiddleware)
 
 app.include_router(v1_router, prefix="/api")
+
+if settings.ENABLE_METRICS:
+    metrics_app = make_asgi_app()
+    app.mount("/metrics", metrics_app)
