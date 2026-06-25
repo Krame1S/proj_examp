@@ -1,9 +1,10 @@
 import json
 import logging
 
-from user_service.exceptions.auth import AuthServiceError, EmailAlreadyRegistered
-from shared.exceptions.base import AppException
 from shared.contracts.auth.contracts import RefreshRequest, SignInRequest, SignUpRequest
+from shared.exceptions.base import AppException
+
+from user_service.exceptions.auth import AuthServiceError
 from user_service.services.auth import AuthService
 from user_service.services.user import UserService
 
@@ -66,7 +67,6 @@ class ConsumerProcessor:
             logger.exception("Unexpected error in get_profile")
             return json.dumps(AppException().to_dict())
 
-
     @staticmethod
     async def update_profile(message: bytes) -> str:
         try:
@@ -79,7 +79,6 @@ class ConsumerProcessor:
         except Exception:
             logger.exception("Unexpected error in update_profile")
             return json.dumps(AppException().to_dict())
-
 
     @staticmethod
     async def delete_account(message: bytes) -> str:

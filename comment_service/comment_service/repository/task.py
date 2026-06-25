@@ -1,10 +1,10 @@
-from typing import Any, Dict, Optional
+from typing import Any
+
 from shared.repository.base import BaseRepository
 
 
 class TaskRepository(BaseRepository):
-
-    async def get_task_by_id(self, task_id: int, owner_id: int) -> Optional[Dict[str, Any]]:
+    async def get_task_by_id(self, task_id: int, owner_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT id FROM tasks.task

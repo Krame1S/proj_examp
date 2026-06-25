@@ -3,12 +3,11 @@
 import enum
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from shared.models.base import Base, TimestampMixin
+from sqlalchemy.orm import Mapped, mapped_column
 
 
-class TaskStatus(str, enum.Enum):
+class TaskStatus(enum.StrEnum):
     todo = "todo"
     in_progress = "in_progress"
     done = "done"

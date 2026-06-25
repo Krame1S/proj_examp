@@ -1,7 +1,9 @@
 from shared.exceptions.base import AppException
 
+
 class AttachmentServiceError(AppException):
     pass
+
 
 class AttachmentNotFound(AppException):
     status_code = 404

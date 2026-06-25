@@ -1,8 +1,9 @@
 import json
 import logging
 
-from shared.exceptions.base import AppException
 from shared.contracts.task.contracts import TaskIn, TaskListRequest, TaskUpdate
+from shared.exceptions.base import AppException
+
 from task_service.services.task import TaskService
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,6 @@ class ConsumerProcessor:
         except Exception:
             logger.exception("Unexpected error in create_task")
             return json.dumps(AppException().to_dict())
-
 
     @staticmethod
     async def list_tasks(message: bytes) -> str:
@@ -44,7 +44,6 @@ class ConsumerProcessor:
             logger.exception("Unexpected error in list_tasks")
             return json.dumps(AppException().to_dict())
 
-
     @staticmethod
     async def get_task_by_id(message: bytes) -> str:
         try:
@@ -60,7 +59,6 @@ class ConsumerProcessor:
         except Exception:
             logger.exception("Unexpected error in get_task_by_id")
             return json.dumps(AppException().to_dict())
-
 
     @staticmethod
     async def patch_task(message: bytes) -> str:
@@ -79,7 +77,6 @@ class ConsumerProcessor:
         except Exception:
             logger.exception("Unexpected error in patch_task")
             return json.dumps(AppException().to_dict())
-
 
     @staticmethod
     async def delete_task(message: bytes) -> str:

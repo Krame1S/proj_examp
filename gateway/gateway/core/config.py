@@ -29,12 +29,12 @@ class Settings(BaseSettings):
     # ── S3 ─────────────────────────────────────────────────────────────────
     # The gateway uploads files directly to S3; the attachment_service only
     # stores the resulting key + metadata.
-    S3_ENDPOINT_URL: str = ""          # leave empty for AWS; set for MinIO etc.
+    S3_ENDPOINT_URL: str = ""  # leave empty for AWS; set for MinIO etc.
     S3_ACCESS_KEY_ID: str = ""
     S3_SECRET_ACCESS_KEY: str = ""
     S3_REGION: str = "us-east-1"
     S3_BUCKET_NAME: str = ""
-    S3_PUBLIC_URL: str = ""            # e.g. "https://cdn.example.com" or MinIO public base
+    S3_PUBLIC_URL: str = ""  # e.g. "https://cdn.example.com" or MinIO public base
 
     @property
     def cors_origins_list(self) -> list[str]:

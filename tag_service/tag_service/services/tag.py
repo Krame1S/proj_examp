@@ -1,7 +1,8 @@
-from tag_service.core.database import get_db_pool
-from tag_service.repository.tag import TagRepository
 from shared.contracts.tag.contracts import TagCreate, TagOut, TagUpdate
-from tag_service.exceptions.tag import TagAlreadyExists, TagNotFound
+
+from tag_service.core.database import get_db_pool
+from tag_service.exceptions.tag import TagAlreadyExistsError, TagNotFoundError
+from tag_service.repository.tag import TagRepository
 
 
 class TagService:
@@ -14,11 +15,10 @@ class TagService:
         repo = TagRepository(pool)
         return cls(repository=repo)
 
-
     async def create_tag(self, tag_in: TagCreate, user_id: int) -> TagOut:
         existing = await self.repository.get_by_name(tag_in.name, user_id)
         if existing:
-            raise TagAlreadyExists()
+            raise TagAlreadyExistsError
 
         record = await self.repository.create(
             name=tag_in.name,
@@ -26,18 +26,15 @@ class TagService:
         )
         return TagOut.from_db_row(record)
 
-
     async def get_tag_by_id(self, tag_id: int, user_id: int) -> TagOut:
         tag = await self.repository.get_by_id(tag_id, user_id)
         if tag is None:
-            raise TagNotFound()
+            raise TagNotFoundError
         return TagOut.from_db_row(tag)
-
 
     async def list_by_user(self, user_id: int) -> list[TagOut]:
         records = await self.repository.list_by_user(user_id)
         return [TagOut.from_db_row(r) for r in records]
-        
 
     async def update_tag(
         self,
@@ -47,14 +44,14 @@ class TagService:
     ) -> TagOut:
         tag = await self.repository.get_by_id(tag_id, user_id)
         if tag is None:
-            raise TagNotFound()
+            raise TagNotFoundError
 
         if tag_update.name is None or tag_update.name == tag["name"]:
             return TagOut.from_db_row(tag)
 
         existing = await self.repository.get_by_name(tag_update.name, user_id)
         if existing and existing["id"] != tag_id:
-            raise TagAlreadyExists()
+            raise TagAlreadyExistsError
 
         updated = await self.repository.update(
             tag_id=tag_id,
@@ -62,16 +59,15 @@ class TagService:
         )
 
         if updated is None:
-            raise TagNotFound()
+            raise TagNotFoundError
 
         return TagOut.from_db_row(updated)
-
 
     async def delete_tag(self, tag_id: int, user_id: int) -> None:
         tag = await self.repository.get_by_id(tag_id, user_id)
         if tag is None:
-            raise TagNotFound()
+            raise TagNotFoundError
 
         deleted = await self.repository.delete(tag_id)
         if not deleted:
-            raise TagNotFound()
+            raise TagNotFoundError

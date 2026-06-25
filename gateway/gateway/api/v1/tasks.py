@@ -1,10 +1,12 @@
 import json
-from gateway.api.deps import get_current_user_id
-from shared.contracts.task.contracts import TaskIn, TaskOut, TaskStatus, TaskUpdate, GetTaskResponse
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Path, status
-from gateway.broker.rpc_publisher import rpc_publisher
+from typing import Annotated
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from shared.broker.queues import ConsumerQueue
-from typing import Annotated, Optional
+from shared.contracts.task.contracts import GetTaskResponse, TaskIn, TaskOut, TaskStatus, TaskUpdate
+
+from gateway.api.deps import get_current_user_id
+from gateway.broker.rpc_publisher import rpc_publisher
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -31,18 +33,20 @@ async def create_task(
 async def list_tasks(
     user_id: Annotated[int, Depends(get_current_user_id)],
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
-    category_id: Annotated[Optional[int], Query(ge=1)] = None,
-    tag_ids: Annotated[Optional[list[int]], Query()] = None,
-    status_filter: Annotated[Optional[TaskStatus], Query(alias="status")] = None,
+    category_id: Annotated[int | None, Query(ge=1)] = None,
+    tag_ids: Annotated[list[int] | None, Query()] = None,
+    status_filter: Annotated[TaskStatus | None, Query(alias="status")] = None,
 ) -> GetTaskResponse:
     raw = await rpc_publisher.call(
-        message=json.dumps({
-            "user_id": user_id,
-            "limit": limit,
-            "category_id": category_id,
-            "tag_ids": tag_ids,
-            "status_filter": status_filter.value if status_filter else None,
-        }),
+        message=json.dumps(
+            {
+                "user_id": user_id,
+                "limit": limit,
+                "category_id": category_id,
+                "tag_ids": tag_ids,
+                "status_filter": status_filter.value if status_filter else None,
+            }
+        ),
         request_queue_name=ConsumerQueue.TASK_LIST.value,
     )
     data = json.loads(raw)

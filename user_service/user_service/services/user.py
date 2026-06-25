@@ -1,9 +1,10 @@
 from alembic.environment import Optional
 from asyncpg.exceptions import UniqueViolationError
+from shared.contracts.auth.contracts import UserProfile
+
 from user_service.core.database import get_db_pool
 from user_service.exceptions.user import EmailAlreadyTaken, UserNotFound
 from user_service.repository.user import UserRepository
-from shared.contracts.auth.contracts import UserProfile
 
 
 class UserService:
@@ -18,7 +19,7 @@ class UserService:
     async def _get_user_or_raise(self, user_id: int) -> dict:
         user = await self.repository.get_by_id(user_id)
         if user is None:
-            raise UserNotFound()
+            raise UserNotFound
         return user
 
     async def get_profile(self, user_id: int) -> UserProfile:
@@ -30,13 +31,13 @@ class UserService:
             return await self.get_profile(user_id)
         try:
             updated = await self.repository.update_email(user_id, email)
-        except UniqueViolationError:
-            raise EmailAlreadyTaken()
+        except UniqueViolationError as e:
+            raise EmailAlreadyTaken from e
         if updated is None:
-            raise UserNotFound()
+            raise UserNotFound
         return UserProfile.from_db_row(updated)
 
     async def delete(self, user_id: int) -> None:
         deleted = await self.repository.delete(user_id)
         if not deleted:
-            raise UserNotFound()
+            raise UserNotFound

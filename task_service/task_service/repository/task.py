@@ -1,17 +1,17 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from shared.repository.base import BaseRepository
 
 
 class TaskRepository(BaseRepository):
-
     async def create_task(
         self,
         title: str,
         description: str,
         owner_id: int,
-        category_id: Optional[int] = None,
+        category_id: int | None = None,
         status: str = "todo",
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             WITH inserted_task AS (
@@ -46,7 +46,7 @@ class TaskRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def get_task_by_id(self, task_id: int, owner_id: int) -> Optional[Dict[str, Any]]:
+    async def get_task_by_id(self, task_id: int, owner_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT
@@ -67,9 +67,7 @@ class TaskRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def list_all_tasks(
-        self, owner_id: int, limit: int, status: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    async def list_all_tasks(self, owner_id: int, limit: int, status: str | None = None) -> list[dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT
@@ -99,8 +97,8 @@ class TaskRepository(BaseRepository):
         owner_id: int,
         category_id: int,
         limit: int,
-        status: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        status: str | None = None,
+    ) -> list[dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT
@@ -129,11 +127,11 @@ class TaskRepository(BaseRepository):
     async def patch_task(
         self,
         task_id: int,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
-        category_id: Optional[int] = None,
-        status: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        title: str | None = None,
+        description: str | None = None,
+        category_id: int | None = None,
+        status: str | None = None,
+    ) -> dict[str, Any] | None:
         await self.fetch_row(
             """
             UPDATE task
@@ -182,7 +180,7 @@ class TaskRepository(BaseRepository):
         self,
         task_id: int,
         owner_id: int,
-        tag_ids: List[int],
+        tag_ids: list[int],
     ) -> None:
         await self.execute(
             """
@@ -218,8 +216,8 @@ class TaskRepository(BaseRepository):
         owner_id: int,
         tag_ids: list[int],
         limit: int,
-        status: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        status: str | None = None,
+    ) -> list[dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT
@@ -251,8 +249,7 @@ class TaskRepository(BaseRepository):
         )
         return [dict(r) for r in records]
 
-
-    async def get_valid_tag_ids(self, tag_ids: List[int], owner_id: int) -> List[int]:
+    async def get_valid_tag_ids(self, tag_ids: list[int], owner_id: int) -> list[int]:
         records = await self.fetch_all(
             """
             SELECT id FROM tags.tag
@@ -262,7 +259,6 @@ class TaskRepository(BaseRepository):
             owner_id,
         )
         return [r["id"] for r in records]
-
 
     async def get_status_counts(self, owner_id: int) -> dict:
         records = await self.fetch_all(

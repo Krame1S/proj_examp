@@ -1,7 +1,6 @@
 """SQLAlchemy Category model — used for Alembic migration generation."""
 
 import sqlalchemy as sa
-
 from shared.models.base import Base, TimestampMixin
 from sqlalchemy.orm import Mapped, mapped_column
 

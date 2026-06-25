@@ -1,10 +1,12 @@
 import json
 from typing import Annotated
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from shared.broker.queues import ConsumerQueue
+from shared.contracts.comment.contracts import CommentIn, CommentOut
+
 from gateway.api.deps import get_current_user_id
 from gateway.broker.rpc_publisher import rpc_publisher
-from shared.contracts.comment.contracts import CommentIn, CommentOut
-from shared.broker.queues import ConsumerQueue
 
 router = APIRouter(prefix="/tasks/{task_id}/comments", tags=["comments"])
 

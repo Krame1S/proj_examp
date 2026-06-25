@@ -4,9 +4,8 @@ Queries go through UserRepository (asyncpg raw SQL).
 """
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column
-
 from shared.models.base import Base, TimestampMixin
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class User(TimestampMixin, Base):

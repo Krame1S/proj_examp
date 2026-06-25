@@ -1,7 +1,7 @@
 """SQLAlchemy Tag model — used for Alembic migration generation."""
 
-from shared.models.base import Base, TimestampMixin
 import sqlalchemy as sa
+from shared.models.base import Base, TimestampMixin
 from sqlalchemy.orm import Mapped, mapped_column
 
 

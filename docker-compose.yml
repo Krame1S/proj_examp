@@ -229,7 +229,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
       RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
       LOGGING_LEVEL: INFO
-      MOCK_S3: "true" 
+      MOCK_S3: "true"
     restart: always
     depends_on:
       - rabbitmq

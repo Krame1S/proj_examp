@@ -1,9 +1,10 @@
-from typing import Any, Dict, Optional
+from typing import Any
+
 from shared.repository.base import BaseRepository
 
 
 class UserRepository(BaseRepository):
-    async def create(self, email: str, password_hash: str) -> Dict[str, Any]:
+    async def create(self, email: str, password_hash: str) -> dict[str, Any]:
         record = await self.fetch_row(
             """
             INSERT INTO "user" (email, password_hash)
@@ -17,7 +18,7 @@ class UserRepository(BaseRepository):
             raise RuntimeError("User creation failed - no row returned")
         return dict(record)
 
-    async def get_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+    async def get_by_id(self, user_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT id, email, is_active, created_at
@@ -28,7 +29,7 @@ class UserRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def get_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+    async def get_by_email(self, email: str) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT id, email, password_hash, is_active, created_at
@@ -39,7 +40,7 @@ class UserRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def update_email(self, user_id: int, email: str) -> Optional[Dict[str, Any]]:
+    async def update_email(self, user_id: int, email: str) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             UPDATE "user"

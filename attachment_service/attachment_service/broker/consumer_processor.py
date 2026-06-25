@@ -2,6 +2,7 @@ import json
 import logging
 
 from shared.exceptions.base import AppException
+
 from attachment_service.services.attachment import AttachmentService
 
 logger = logging.getLogger(__name__)

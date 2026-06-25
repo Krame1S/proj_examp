@@ -1,9 +1,8 @@
-
 import asyncio
 import logging
 import uuid
 from typing import Self
- 
+
 from aio_pika import ExchangeType, Message, connect
 from aio_pika.abc import (
     AbstractChannel,
@@ -11,9 +10,8 @@ from aio_pika.abc import (
     AbstractIncomingMessage,
     AbstractQueue,
 )
- 
+
 from gateway.core.config import settings
- 
 
 
 class RpcPublisher:

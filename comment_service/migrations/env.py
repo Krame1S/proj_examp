@@ -2,12 +2,12 @@ import asyncio
 import os
 from logging.config import fileConfig
 
+import sqlalchemy as sa
 from alembic import context
+from shared.models.base import Base
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
-import sqlalchemy as sa
 
-from shared.models.base import Base
 from comment_service.models import comment  # noqa: F401
 
 config = context.config

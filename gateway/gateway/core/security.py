@@ -1,12 +1,13 @@
 import jwt
 from fastapi import HTTPException, status
+
 from gateway.core.config import settings
 
 _public_key: str | None = None
 
 
 def load_public_key(path: str) -> None:
-    global _public_key
+    global _public_key  # noqa: PLW0603
     try:
         with open(path) as f:
             _public_key = f.read()

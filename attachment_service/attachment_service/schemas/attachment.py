@@ -5,6 +5,7 @@ class AttachmentOut(AttachmentOutBase):
     @classmethod
     def from_db_row(cls, row: dict) -> "AttachmentOut":
         from attachment_service.utils.s3 import get_public_url
+
         return cls(
             id=row["id"],
             task_id=row["task_id"],

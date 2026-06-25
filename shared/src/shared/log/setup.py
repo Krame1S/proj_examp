@@ -13,11 +13,13 @@ LEVEL_COLORS = {
     logging.CRITICAL: Fore.RED + Style.BRIGHT,
 }
 
+
 class TraceContextFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         ctx = trace.get_current_span().get_span_context()
         record.trace_id = format(ctx.trace_id, "032x") if ctx.is_valid else ""
         return True
+
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
@@ -27,6 +29,7 @@ class ColoredFormatter(logging.Formatter):
         trace_val = getattr(record, "trace_id", "")
         trace_id = f" trace={trace_val}" if trace_val else ""
         return f"{level} [{record.name} - {self.formatTime(record)}]{trace_id} {record.getMessage()}"
+
 
 def setup_logging(level: str = "INFO") -> None:
     log_queue: queue.Queue = queue.Queue()

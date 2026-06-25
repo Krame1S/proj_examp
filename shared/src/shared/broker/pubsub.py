@@ -36,7 +36,9 @@ async def pubsub_subscribe(
 
     try:
         while True:
-            msg = await ps.get_message(ignore_subscribe_messages=True, timeout=poll_interval)
+            msg = await ps.get_message(
+                ignore_subscribe_messages=True, timeout=poll_interval
+            )
             if msg is not None and msg["type"] == "message":
                 yield json.loads(msg["data"])
             else:

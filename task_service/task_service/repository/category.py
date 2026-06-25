@@ -1,15 +1,15 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from shared.repository.base import BaseRepository
 
 
 class CategoryRepository(BaseRepository):
-
     async def create(
         self,
         name: str,
         description: str | None,
         created_by: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         record = await self.fetch_row(
             """
             INSERT INTO categories.category (name, description, created_by)
@@ -24,7 +24,7 @@ class CategoryRepository(BaseRepository):
             raise RuntimeError("Category creation failed - no row returned")
         return dict(record)
 
-    async def get_by_id(self, category_id: int, user_id: int) -> Optional[Dict[str, Any]]:
+    async def get_by_id(self, category_id: int, user_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT id, name, description, created_by, created_at, updated_at
@@ -36,7 +36,7 @@ class CategoryRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def get_by_name(self, name: str, user_id: int) -> Optional[Dict[str, Any]]:
+    async def get_by_name(self, name: str, user_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT id, name, description, created_by, created_at, updated_at
@@ -48,7 +48,7 @@ class CategoryRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def list_by_user_with_count(self, user_id: int) -> List[Dict[str, Any]]:
+    async def list_by_user_with_count(self, user_id: int) -> list[dict[str, Any]]:
         records = await self.fetch_all(
             """
             WITH category_task_count AS (
@@ -81,7 +81,7 @@ class CategoryRepository(BaseRepository):
         category_id: int,
         name: str | None = None,
         description: str | None = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             UPDATE categories.category

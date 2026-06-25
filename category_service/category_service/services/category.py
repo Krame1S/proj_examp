@@ -1,9 +1,8 @@
-from typing import Optional
+from shared.contracts.category.contracts import CategoryCreate, CategoryOut, CategoryUpdate
 
 from category_service.core.database import get_db_pool
-from category_service.exceptions.category import CategoryAlreadyExists, CategoryNotFound
+from category_service.exceptions.category import CategoryAlreadyExistsError, CategoryNotFoundError
 from category_service.repository.category import CategoryRepository
-from shared.contracts.category.contracts import CategoryCreate, CategoryOut, CategoryUpdate
 
 
 class CategoryService:
@@ -21,7 +20,7 @@ class CategoryService:
     async def create_category(self, request: CategoryCreate, owner_id: int) -> CategoryOut:
         existing = await self.repository.get_by_name(request.name, owner_id)
         if existing:
-            raise CategoryAlreadyExists()
+            raise CategoryAlreadyExistsError
 
         record = await self.repository.create(
             name=request.name,
@@ -34,7 +33,7 @@ class CategoryService:
         self,
         owner_id: int,
         limit: int = 100,
-        parent_id: Optional[int] = None,
+        parent_id: int | None = None,
     ) -> list[CategoryOut]:
         records = await self.repository.list_by_user_with_count(owner_id)
         categories = records[:limit]
@@ -43,7 +42,7 @@ class CategoryService:
     async def get_category_by_id(self, owner_id: int, category_id: int) -> CategoryOut:
         category = await self.repository.get_by_id(category_id, owner_id)
         if category is None:
-            raise CategoryNotFound()
+            raise CategoryNotFoundError
         return CategoryOut.from_db_row(category)
 
     async def patch_category(
@@ -54,7 +53,7 @@ class CategoryService:
     ) -> CategoryOut:
         category = await self.repository.get_by_id(category_id, user_id)
         if category is None:
-            raise CategoryNotFound()
+            raise CategoryNotFoundError
 
         updated = await self.repository.update(
             category_id=category_id,
@@ -62,14 +61,14 @@ class CategoryService:
             description=update_data.description,
         )
         if updated is None:
-            raise CategoryNotFound()
+            raise CategoryNotFoundError
         return CategoryOut.from_db_row(updated)
 
     async def delete_category(self, category_id: int, user_id: int) -> None:
         category = await self.repository.get_by_id(category_id, user_id)
         if category is None:
-            raise CategoryNotFound()
+            raise CategoryNotFoundError
 
         deleted = await self.repository.delete(category_id)
         if not deleted:
-            raise CategoryNotFound()
+            raise CategoryNotFoundError

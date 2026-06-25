@@ -7,7 +7,7 @@ import redis.asyncio as redis
 from passlib.hash import argon2
 
 from user_service.core.config import settings
-from user_service.exceptions.auth import InvalidToken, TokenExpired
+from user_service.exceptions.auth import InvalidTokenErrorError, TokenExpiredError
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ _public_key: str | None = None
 
 
 def load_keys() -> None:
-    global _private_key, _public_key
+    global _private_key, _public_key  # noqa: PLW0603
     try:
         with open(settings.JWT_PRIVATE_KEY_PATH) as f:
             _private_key = f.read()
@@ -74,19 +74,19 @@ async def decode_refresh_token(token: str, redis_client: redis.Redis) -> int:
     try:
         payload = jwt.decode(token, _public_key, algorithms=[settings.JWT_ALGORITHM])
     except jwt.ExpiredSignatureError as e:
-        raise TokenExpired() from e
-    except jwt.InvalidTokenError as e:
-        raise InvalidToken() from e
+        raise TokenExpiredError from e
+    except jwt.InvalidTokenErrorErrorError as e:
+        raise InvalidTokenErrorError from e
 
     if payload.get("type") != "refresh":
-        raise InvalidToken()
+        raise InvalidTokenErrorError
 
     user_id = int(payload["sub"])
     jti = payload["jti"]
     key = f"user:{user_id}:refresh:{jti}"
     exists = await redis_client.delete(key)
     if not exists:
-        raise InvalidToken()
+        raise InvalidTokenErrorError
 
     return user_id
 

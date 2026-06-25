@@ -41,5 +41,6 @@ class ConsumerQueue(Enum):
     ATTACHMENT_LIST = "attachment.list"
     ATTACHMENT_DELETE = "attachment.delete"
 
+
 class ResponseQueue(Enum):
     DEFAULT = "rpc_response"

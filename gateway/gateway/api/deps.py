@@ -1,9 +1,11 @@
 from typing import Annotated
+
+import redis.asyncio as redis
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from gateway.core.security import decode_access_token
-import redis.asyncio as redis
+
 from gateway.core.config import settings
+from gateway.core.security import decode_access_token
 
 security_scheme = HTTPBearer()
 

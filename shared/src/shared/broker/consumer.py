@@ -22,7 +22,9 @@ class RpcConsumer:
         connection = await connect(self.amqp_url)
         channel = await connection.channel()
         # обменник + очередь
-        response_exchange = await channel.declare_exchange(name=response_exchange_name.value, type=ExchangeType.DIRECT)
+        response_exchange = await channel.declare_exchange(
+            name=response_exchange_name.value, type=ExchangeType.DIRECT
+        )
         queue = await channel.declare_queue(name=queue_name, auto_delete=False)
         # обработка сообщений
         async with queue.iterator() as iterator:

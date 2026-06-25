@@ -1,5 +1,6 @@
 from shared.exceptions.base import AppException
 
+
 class UserServiceError(AppException):
     pass
 

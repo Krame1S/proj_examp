@@ -1,10 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from shared.repository.base import BaseRepository
 
 
 class AttachmentRepository(BaseRepository):
-
     async def create_attachment(
         self,
         task_id: int,
@@ -12,8 +11,8 @@ class AttachmentRepository(BaseRepository):
         key: str,
         filename: str,
         content_type: str,
-        size: int,          # actual byte count provided by the gateway
-    ) -> Optional[Dict[str, Any]]:
+        size: int,  # actual byte count provided by the gateway
+    ) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             INSERT INTO attachments.attachment (task_id, owner_id, key, filename, content_type, size)
@@ -29,7 +28,7 @@ class AttachmentRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def list_attachments_by_task(self, task_id: int) -> List[Dict[str, Any]]:
+    async def list_attachments_by_task(self, task_id: int) -> list[dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT id, task_id, owner_id, key, filename, content_type, size, created_at, updated_at
@@ -41,7 +40,7 @@ class AttachmentRepository(BaseRepository):
         )
         return [dict(r) for r in records]
 
-    async def get_by_id(self, attachment_id: int) -> Optional[Dict[str, Any]]:
+    async def get_by_id(self, attachment_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT id, task_id, owner_id, key, filename, content_type, size, created_at, updated_at

@@ -1,10 +1,10 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from shared.repository.base import BaseRepository
 
 
 class CommentRepository(BaseRepository):
-
-    async def create_comment(self, content: str, task_id: int, owner_id: int) -> Optional[Dict[str, Any]]:
+    async def create_comment(self, content: str, task_id: int, owner_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             INSERT INTO comments.comment (content, task_id, owner_id)
@@ -17,7 +17,7 @@ class CommentRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def list_comments_by_task(self, task_id: int) -> List[Dict[str, Any]]:
+    async def list_comments_by_task(self, task_id: int) -> list[dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT id, content, task_id, owner_id, created_at, updated_at

@@ -1,9 +1,10 @@
 import json
 import logging
 
-from tag_service.services.tag import TagService
 from shared.contracts.tag.contracts import TagCreate, TagUpdate
 from shared.exceptions.base import AppException
+
+from tag_service.services.tag import TagService
 
 logger = logging.getLogger(__name__)
 

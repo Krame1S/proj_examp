@@ -1,10 +1,12 @@
 import json
 from typing import Annotated
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from shared.broker.queues import ConsumerQueue
+from shared.contracts.tag.contracts import TagCreate, TagOut, TagUpdate
+
 from gateway.api.deps import get_current_user_id
 from gateway.broker.rpc_publisher import rpc_publisher
-from shared.contracts.tag.contracts import TagCreate, TagOut, TagUpdate
-from shared.broker.queues import ConsumerQueue
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 

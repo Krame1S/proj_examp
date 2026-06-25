@@ -1,12 +1,11 @@
 import json
 from typing import Annotated
- 
-from fastapi import APIRouter, Body, HTTPException, status
- 
-from gateway.broker.rpc_publisher import rpc_publisher
-from shared.contracts.auth.contracts import RefreshRequest, SignInRequest, SignUpRequest, TokenPair
-from shared.broker.queues import ConsumerQueue
 
+from fastapi import APIRouter, Body, HTTPException, status
+from shared.broker.queues import ConsumerQueue
+from shared.contracts.auth.contracts import RefreshRequest, SignInRequest, SignUpRequest, TokenPair
+
+from gateway.broker.rpc_publisher import rpc_publisher
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

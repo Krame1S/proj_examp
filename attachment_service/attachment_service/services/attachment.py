@@ -1,6 +1,8 @@
+import contextlib
+
 from attachment_service.core.database import get_db_pool
 from attachment_service.exceptions.attachment import AttachmentNotFound
-from attachment_service.exceptions.task import TaskNotFound
+from attachment_service.exceptions.task import TaskNotFoundError
 from attachment_service.repository.attachment import AttachmentRepository
 from attachment_service.repository.task import TaskRepository
 from attachment_service.schemas.attachment import AttachmentOut
@@ -40,7 +42,7 @@ class AttachmentService:
         """
         task = await self.task_repository.get_task_by_id(task_id, owner_id)
         if task is None:
-            raise TaskNotFound()
+            raise TaskNotFoundError
 
         record = await self.attachment_repository.create_attachment(
             task_id=task_id,
@@ -58,7 +60,7 @@ class AttachmentService:
     async def list_attachments(self, task_id: int, owner_id: int) -> list[AttachmentOut]:
         task = await self.task_repository.get_task_by_id(task_id, owner_id)
         if task is None:
-            raise TaskNotFound()
+            raise TaskNotFoundError
 
         records = await self.attachment_repository.list_attachments_by_task(task_id)
         return [AttachmentOut.from_db_row(r) for r in records]
@@ -66,14 +68,12 @@ class AttachmentService:
     async def delete_attachment(self, attachment_id: int, owner_id: int) -> None:
         record = await self.attachment_repository.get_by_id(attachment_id)
         if record is None or record["owner_id"] != owner_id:
-            raise AttachmentNotFound()
+            raise AttachmentNotFound
 
         # Best-effort S3 cleanup — don't fail the request if S3 is unavailable
-        try:
+        with contextlib.suppress(Exception):
             await delete_object(record["key"])
-        except Exception:
-            pass
 
         deleted = await self.attachment_repository.delete_attachment(attachment_id, owner_id)
         if not deleted:
-            raise AttachmentNotFound()
+            raise AttachmentNotFound

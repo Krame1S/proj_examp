@@ -1,15 +1,15 @@
 from typing import Optional
 
-from task_service.core.database import get_db_pool
-from task_service.exceptions.category import CategoryNotFound
-from task_service.exceptions.tag import TagNotFound
-from task_service.exceptions.task import TaskNotFound
+from shared.broker.pubsub import pubsub_publish
+from shared.contracts.task.contracts import GetTaskResponse, TaskIn, TaskOut, TaskUpdate
+
+from task_service.core.database import get_db_pool, get_redis_client
+from task_service.exceptions.category import CategoryNotFoundError
+from task_service.exceptions.tag import TagNotFoundError
+from task_service.exceptions.task import TaskNotFoundError
+from task_service.models.task import TaskStatus
 from task_service.repository.category import CategoryRepository
 from task_service.repository.task import TaskRepository
-from shared.contracts.task.contracts import TaskIn, TaskOut, TaskUpdate, GetTaskResponse
-from task_service.models.task import TaskStatus
-from task_service.core.database import get_db_pool, get_redis_client
-from shared.broker.pubsub import pubsub_publish
 
 
 class TaskService:
@@ -32,21 +32,18 @@ class TaskService:
         counts = await self.task_repository.get_status_counts(owner_id)
         await pubsub_publish(f"dashboard:{owner_id}", counts, self.redis_client)
 
-
     async def _get_task_or_raise(self, task_id: int, owner_id: int) -> dict:
         task = await self.task_repository.get_task_by_id(task_id, owner_id)
         if task is None:
-            raise TaskNotFound()
+            raise TaskNotFoundError
         return task
 
-
-    async def _validate_category_belongs_to_user(self, category_id: Optional[int], user_id: int) -> None:
+    async def _validate_category_belongs_to_user(self, category_id: int | None, user_id: int) -> None:
         if category_id is None:
             return
         category = await self.category_repository.get_by_id(category_id, user_id)
         if category is None:
-            raise CategoryNotFound()
-
+            raise CategoryNotFoundError
 
     async def create_task(self, task_in: TaskIn, owner_id: int) -> TaskOut:
         await self._validate_category_belongs_to_user(task_in.category_id, owner_id)
@@ -54,7 +51,7 @@ class TaskService:
         if task_in.tags:
             valid_ids = await self.task_repository.get_valid_tag_ids(task_in.tags, owner_id)
             if len(valid_ids) != len(task_in.tags):
-                raise TagNotFound()
+                raise TagNotFoundError
 
         record = await self.task_repository.create_task(
             title=task_in.title,
@@ -81,16 +78,14 @@ class TaskService:
 
         return TaskOut.from_db_row(record)
 
-
     async def list_tasks(
         self,
         owner_id: int,
         limit: int,
-        category_id: Optional[int] = None,
-        tag_ids: Optional[list[int]] = None,
+        category_id: int | None = None,
+        tag_ids: list[int] | None = None,
         status_filter: Optional["TaskStatus"] = None,
     ) -> GetTaskResponse:
-
         fetch_limit = limit + 1
         status_value = status_filter.value if status_filter else None
 
@@ -124,11 +119,32 @@ class TaskService:
             has_more=has_more,
         )
 
-
     async def get_task_by_id(self, owner_id: int, task_id: int) -> TaskOut:
         record = await self._get_task_or_raise(task_id, owner_id)
         return TaskOut.from_db_row(record)
 
+    async def _apply_tags_patch(self, task_id: int, tag_ids: list[int], user_id: int) -> None:
+        valid_ids = await self.task_repository.get_valid_tag_ids(tag_ids, user_id)
+        if len(valid_ids) != len(tag_ids):
+            raise TagNotFoundError
+        await self.task_repository.set_tags_on_task(
+            task_id=task_id,
+            owner_id=user_id,
+            tag_ids=tag_ids,
+        )
+
+    async def _apply_fields_patch(self, task_id: int, changes: dict, user_id: int) -> TaskOut:
+        updated = await self.task_repository.patch_task(
+            task_id=task_id,
+            title=changes.get("title"),
+            description=changes.get("description"),
+            category_id=changes.get("category_id"),
+            status=changes["status"].value if changes.get("status") is not None else None,
+        )
+        if updated is None:
+            raise TaskNotFoundError
+        await self._publish_dashboard(user_id)
+        return TaskOut.from_db_row(updated)
 
     async def patch_task(
         self,
@@ -137,49 +153,24 @@ class TaskService:
         user_id: int,
     ) -> TaskOut:
         task = await self._get_task_or_raise(task_id, user_id)
-
         changes = update_data.model_dump(exclude_unset=True)
         if not changes:
             return TaskOut.from_db_row(task)
-
         if "category_id" in changes:
             await self._validate_category_belongs_to_user(changes["category_id"], user_id)
-
         if "tags" in changes:
-            tag_ids = changes.pop("tags")
-            valid_ids = await self.task_repository.get_valid_tag_ids(tag_ids, user_id)
-            if len(valid_ids) != len(tag_ids):
-                raise TagNotFound()
-            await self.task_repository.set_tags_on_task(
-                task_id=task_id,
-                owner_id=user_id,
-                tag_ids=tag_ids,
-            )
-
+            await self._apply_tags_patch(task_id, changes.pop("tags"), user_id)
         if changes:
-            updated = await self.task_repository.patch_task(
-                task_id=task_id,
-                title=changes.get("title"),
-                description=changes.get("description"),
-                category_id=changes.get("category_id"),
-                status=changes["status"].value if changes.get("status") is not None else None,
-            )
-            if updated is None:
-                raise TaskNotFound()
-            await self._publish_dashboard(user_id)
-            return TaskOut.from_db_row(updated)
-
+            return await self._apply_fields_patch(task_id, changes, user_id)
         record = await self.task_repository.get_task_by_id(task_id, user_id)
         if record is None:
-            raise TaskNotFound()
-
+            raise TaskNotFoundError
         await self._publish_dashboard(user_id)
         return TaskOut.from_db_row(record)
-
 
     async def delete_task(self, task_id: int, user_id: int) -> None:
         await self._get_task_or_raise(task_id, user_id)
         deleted = await self.task_repository.delete_task(task_id)
         if not deleted:
-            raise TaskNotFound()
+            raise TaskNotFoundError
         await self._publish_dashboard(user_id)

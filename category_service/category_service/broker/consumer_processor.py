@@ -1,13 +1,13 @@
 import json
 import logging
 
-from shared.exceptions.base import AppException
 from shared.contracts.category.contracts import (
     CategoryCreate,
     CategoryListRequest,
-    CategoryListResponse,
     CategoryUpdate,
 )
+from shared.exceptions.base import AppException
+
 from category_service.services.category import CategoryService
 
 logger = logging.getLogger(__name__)

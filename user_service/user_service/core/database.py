@@ -1,11 +1,12 @@
 import asyncpg
+
 from user_service.core.config import settings
 
 _pool: asyncpg.Pool | None = None
 
 
 async def get_db_pool() -> asyncpg.Pool:
-    global _pool
+    global _pool  # noqa: PLW0603
     if _pool is None:
         _pool = await asyncpg.create_pool(
             dsn=settings.DATABASE_URL,
@@ -17,7 +18,7 @@ async def get_db_pool() -> asyncpg.Pool:
 
 
 async def close_db_pool() -> None:
-    global _pool
+    global _pool  # noqa: PLW0603
     if _pool is not None:
         await _pool.close()
         _pool = None

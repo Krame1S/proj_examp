@@ -1,14 +1,14 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from shared.repository.base import BaseRepository
 
-class TagRepository(BaseRepository):
 
+class TagRepository(BaseRepository):
     async def create(
         self,
         name: str,
         created_by: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         record = await self.fetch_row(
             """
             INSERT INTO tag (name, created_by)
@@ -22,7 +22,7 @@ class TagRepository(BaseRepository):
             raise RuntimeError("Tag creation failed - no row returned")
         return dict(record)
 
-    async def get_by_id(self, tag_id: int, user_id: int) -> Optional[Dict[str, Any]]:
+    async def get_by_id(self, tag_id: int, user_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT id, name, created_by, created_at, updated_at
@@ -34,7 +34,7 @@ class TagRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def get_by_name(self, name: str, user_id: int) -> Optional[Dict[str, Any]]:
+    async def get_by_name(self, name: str, user_id: int) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             SELECT id, name, created_by, created_at, updated_at
@@ -46,7 +46,7 @@ class TagRepository(BaseRepository):
         )
         return dict(record) if record is not None else None
 
-    async def list_by_user(self, user_id: int) -> List[Dict[str, Any]]:
+    async def list_by_user(self, user_id: int) -> list[dict[str, Any]]:
         records = await self.fetch_all(
             """
             SELECT id, name, created_by, created_at, updated_at
@@ -61,12 +61,12 @@ class TagRepository(BaseRepository):
     async def update(
         self,
         tag_id: int,
-        name: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        name: str | None = None,
+    ) -> dict[str, Any] | None:
         record = await self.fetch_row(
             """
             UPDATE tag
-            SET 
+            SET
                 name = COALESCE($2, name),
                 updated_at = NOW()
             WHERE id = $1
