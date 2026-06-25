@@ -36,6 +36,10 @@ class ConsumerQueue(Enum):
     COMMENT_LIST = "comment.list"
     COMMENT_DELETE = "comment.delete"
 
+    # Attachment service
+    ATTACHMENT_CREATE = "attachment.create"
+    ATTACHMENT_LIST = "attachment.list"
+    ATTACHMENT_DELETE = "attachment.delete"
 
 class ResponseQueue(Enum):
     DEFAULT = "rpc_response"

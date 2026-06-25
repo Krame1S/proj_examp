@@ -1,8 +1,7 @@
 """SQLAlchemy Attachment model — used for Alembic migration generation."""
 
 from sqlalchemy.orm import Mapped, mapped_column
-from pg.models import Base
-from attachment_service.models.base import TimestampMixin
+from shared.models.base import Base, TimestampMixin
 import sqlalchemy as sa
 
 
