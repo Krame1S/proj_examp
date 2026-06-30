@@ -23,7 +23,14 @@ class TraceContextFilter(logging.Filter):
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
-        color = LEVEL_COLORS.get(record.levelno, "")
+        msg = record.getMessage()
+
+        # Если это /metrics - делаем серым
+        if "GET /metrics" in msg or "GET /metrics/" in msg:
+            color = Fore.LIGHTBLACK_EX  # или Fore.WHITE с Style.DIM
+        else:
+            color = LEVEL_COLORS.get(record.levelno, "")
+
         reset = Style.RESET_ALL
         level = f"{color}{record.levelname:<8}{reset}"
         trace_val = getattr(record, "trace_id", "")

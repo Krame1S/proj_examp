@@ -135,6 +135,19 @@ services:
     networks:
       - backend
 
+  migrate_chat:
+    build:
+      context: .
+      dockerfile: chat_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
   # ── Gateway ──────────────────────────────────────────────────────────
 
   gateway:
@@ -290,6 +303,25 @@ services:
       postgres:
         condition: service_healthy
       migrate_attachment:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  chat_service:
+    build:
+      context: .
+      dockerfile: chat_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_chat:
         condition: service_completed_successfully
     networks:
       - backend

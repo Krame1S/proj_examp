@@ -41,6 +41,17 @@ class ConsumerQueue(Enum):
     ATTACHMENT_LIST = "attachment.list"
     ATTACHMENT_DELETE = "attachment.delete"
 
+    # Chat service
+    CHAT_REQUEST_CREATE = "chat.request.create"
+    CHAT_REQUEST_LIST = "chat.request.list"
+    CHAT_REQUEST_CANCEL = "chat.request.cancel"
+    CHAT_REQUEST_ACCEPT = "chat.request.accept"
+    CHAT_REQUEST_DECLINE = "chat.request.decline"
+    CHAT_ROOM_LIST = "chat.room.list"
+    CHAT_ROOM_GET = "chat.room.get"
+    CHAT_MESSAGE_CREATE = "chat.message.create"
+    CHAT_MESSAGE_LIST = "chat.message.list"
+
 
 class ResponseQueue(Enum):
     DEFAULT = "rpc_response"
