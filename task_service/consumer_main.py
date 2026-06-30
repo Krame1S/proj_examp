@@ -2,15 +2,17 @@ import asyncio
 import logging
 
 from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
+from shared.broker.consumer import RpcConsumer
 from shared.broker.exchanges import ResponseExchange
 from shared.broker.queues import ConsumerQueue
 from shared.log.setup import setup_logging
 from shared.metrics.setup import setup_tracing
 
-from task_service.broker.consumer import rpc_consumer
 from task_service.broker.consumer_processor import ConsumerProcessor
 from task_service.core.config import settings
 from task_service.core.database import close_db_pool, close_redis_client
+
+rpc_consumer = RpcConsumer(amqp_url=settings.RABBIT_AMQP)
 
 
 async def main() -> None:
