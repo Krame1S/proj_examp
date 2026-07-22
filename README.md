@@ -13,8 +13,10 @@
 - [Технологический стек](#технологический-стек)
 - [Быстрый старт](#быстрый-старт)
 - [Структура репозитория](#структура-репозитория)
+- [Работа с файлами (S3)](#работа-с-файлами-s3)
 - [Observability](#observability)
 - [Тестирование](#тестирование)
+- [История разработки](#история-разработки)
 - [Roadmap](#roadmap)
 
 ---
@@ -27,16 +29,16 @@ Gateway — единственная точка входа с публичным
 
 ## Сервисы
 
-| Сервис | Ответственность |
-|---|---|
-| **gateway** | Единая точка входа: HTTP API, JWT-аутентификация (RS256), проксирование запросов в очереди как RPC, WebSocket для real-time |
-| **user_service** | Регистрация, вход, refresh-токены, профиль пользователя |
-| **task_service** | CRUD задач, фильтрация, пагинация, привязка категорий/тегов |
-| **category_service** | Категории задач |
-| **tag_service** | Теги задач (уникальны в рамках пользователя) |
-| **comment_service** | Комментарии к задачам |
-| **attachment_service** | Загрузка и хранение вложений в S3 |
-| **chat_service** | Чат по задачам в реальном времени (WebSocket + Redis pub/sub, персистентность сообщений) |
+| Сервис                 | Ответственность                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **gateway**            | Единая точка входа: HTTP API, JWT-аутентификация (RS256), проксирование запросов в очереди как RPC, WebSocket для real-time |
+| **user_service**       | Регистрация, вход, refresh-токены, профиль пользователя                                                                     |
+| **task_service**       | CRUD задач, фильтрация, пагинация, привязка категорий/тегов                                                                 |
+| **category_service**   | Категории задач                                                                                                             |
+| **tag_service**        | Теги задач (уникальны в рамках пользователя)                                                                                |
+| **comment_service**    | Комментарии к задачам                                                                                                       |
+| **attachment_service** | Загрузка и хранение вложений в S3                                                                                           |
+| **chat_service**       | Чат по задачам в реальном времени (WebSocket + Redis pub/sub, персистентность сообщений)                                    |
 
 ## Технологический стек
 
@@ -46,7 +48,7 @@ Gateway — единственная точка входа с публичным
 - **Real-time:** WebSocket + Redis pub/sub (multi-worker broadcast)
 - **Auth:** JWT RS256, refresh-токены в Redis
 - **Хранилище файлов:** S3-совместимое (aiobotocore)
-- **Наблюдаемость:** OpenTelemetry, Jaeger (трейсинг), Prometheus + Grafana (метрики), Loki + Promtail (логи)
+- **Observability:** OpenTelemetry, Jaeger (трейсинг), Prometheus + Grafana (метрики), Loki + Promtail (логи)
 - **Инфраструктура:** Docker Compose, Poetry, Ruff
 
 ## Быстрый старт
@@ -112,6 +114,10 @@ poetry run uvicorn user_service.main:app --reload
 └── consumer_main.py     # точка входа consumer'а
 ```
 
+## Работа с файлами (S3)
+
+Загрузка вложений разделена между gateway и `attachment_service`: gateway напрямую заливает файл в S3-совместимое хранилище (через `aiobotocore`), а `attachment_service` хранит только ключ объекта и метаданные (имя, размер, mime-type, привязка к задаче) — сам бинарник через RabbitMQ не гоняется. Для локальной разработки без реального бакета есть флаг `MOCK_S3` (включается явно или автоматически при `DEBUG=true`), который подменяет реальные вызовы S3-заглушкой.
+
 ## Observability
 
 - **Трейсинг:** Jaeger UI — `http://localhost:16686`
@@ -127,6 +133,14 @@ poetry run uvicorn user_service.main:app --reload
 cd <service>
 poetry run pytest --cov=<service> --cov-report=term-missing
 ```
+
+## История разработки
+
+Проект развивался в несколько этапов, каждый — через отдельную ветку с последующим merge в `main`:
+
+1. **Монолит** — первая версия: один FastAPI-сервис, одна база, синхронная REST-логика между доменами.
+2. **`microservices-rabbitmq`** — разбиение монолита на независимые сервисы (gateway + 7 доменных сервисов), переход на RPC через RabbitMQ, своя схема PostgreSQL на сервис.
+3. **`feature/chat-service`** — добавление нового микросервиса, `chat_service`: real-time чат по задачам через WebSocket в gateway и Redis pub/sub для multi-worker broadcast.
 
 ## Roadmap
 
