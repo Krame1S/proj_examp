@@ -1,0 +1,36 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run tests with coverage for each service
+        run: |
+          for svc in gateway user_service task_service category_service tag_service comment_service attachment_service chat_service; do
+            if [ -f "$svc/pyproject.toml" ]; then
+              cd "$svc"
+              pip install poetry --break-system-packages
+              poetry install
+              poetry run pytest --cov="$svc" --cov-report=xml:coverage.xml || true
+              cd ..
+            fi
+          done
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
