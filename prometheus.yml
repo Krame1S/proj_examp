@@ -8,5 +8,5 @@ scrape_configs:
       # "app" — это имя сервиса в docker-compose.
       # Внутри Docker-сети это автоматически резолвится в IP контейнера.
       # Prometheus и app находятся в одной сети, поэтому имя работает.
-      - targets: ["app:8000"]
+      - targets: ["gateway:8000"]
     metrics_path: /metrics

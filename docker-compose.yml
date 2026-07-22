@@ -1,4 +1,7 @@
 services:
+
+  # ── Infrastructure ───────────────────────────────────────────────────
+
   postgres:
     image: postgres:16-alpine
     environment:
@@ -6,9 +9,17 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: mydb
     ports:
-      - "5433:5432"   # 5433 снаружи чтобы не конфликтовать с локальным postgres
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - backend
 
   redis:
     image: redis:7-alpine
@@ -16,69 +27,371 @@ services:
       - "6379:6379"
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - backend
 
-  app:
-    build: .
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks:
+      - backend
+
+  # ── Migrations ───────────────────────────────────────────────────────
+
+  migrate_user:
+    build:
+      context: .
+      dockerfile: user_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  migrate_category:
+    build:
+      context: .
+      dockerfile: category_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  migrate_task:
+    build:
+      context: .
+      dockerfile: task_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  migrate_tag:
+    build:
+      context: .
+      dockerfile: tag_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  migrate_comment:
+    build:
+      context: .
+      dockerfile: comment_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  migrate_attachment:
+    build:
+      context: .
+      dockerfile: attachment_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  migrate_chat:
+    build:
+      context: .
+      dockerfile: chat_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+    command: sh -c "alembic upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  # ── Gateway ──────────────────────────────────────────────────────────
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
-      REDIS_URL: redis://redis:6379
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
+      LOGGING_LEVEL: INFO
+      CORS_ORIGINS: "*"
       ENABLE_TRACING: "true"
-      OTEL_SERVICE_NAME: "task-manager"
-      # Jaeger внутри Docker-сети виден как "jaeger:4317"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
+      MOCK_S3: "true"
+    restart: always
     depends_on:
-      - postgres
-      - redis
-      - jaeger
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    networks:
+      - backend
 
-  # ── Jaeger — система трейсинга ──────────────────────────────────────
-  # Jaeger собирает "трейсы" — цепочки вызовов внутри одного запроса.
-  # Ты видишь: запрос пришёл → сколько ждал БД → сколько Redis → итого.
-  #
-  # all-in-one — образ "всё в одном": коллектор + UI + хранилище.
-  # В продакшене разворачивают по отдельности, но для разработки хватает.
+  # ── User Service ─────────────────────────────────────────────────────
+
+  user_service:
+    build:
+      context: .
+      dockerfile: user_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
+      LOGGING_LEVEL: INFO
+      JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate_user:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  # ── Task Service ─────────────────────────────────────────────────────
+
+  task_service:
+    build:
+      context: .
+      dockerfile: task_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
+      LOGGING_LEVEL: INFO
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_task:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  # ── Category Service ─────────────────────────────────────────────────
+
+  category_service:
+    build:
+      context: .
+      dockerfile: category_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_category:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  # ── Tag Service ──────────────────────────────────────────────────────
+
+  tag_service:
+    build:
+      context: .
+      dockerfile: tag_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_tag:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  # ── Comment Service ───────────────────────────────────────────────────
+
+  comment_service:
+    build:
+      context: .
+      dockerfile: comment_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_comment:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  # ── Attachment Service ────────────────────────────────────────────────
+
+  attachment_service:
+    build:
+      context: .
+      dockerfile: attachment_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+      MOCK_S3: "true"
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_attachment:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  chat_service:
+    build:
+      context: .
+      dockerfile: chat_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb
+      RABBIT_AMQP: amqp://guest:guest@rabbitmq:5672/
+      LOGGING_LEVEL: INFO
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate_chat:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  # ── Observability ─────────────────────────────────────────────────────
+
   jaeger:
     image: jaegertracing/all-in-one:1.58
     environment:
-      # Включаем приём данных по протоколу OTLP (OpenTelemetry Protocol)
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
-      - "16686:16686"   # Jaeger UI — открой в браузере: http://localhost:16686
-      - "4317:4317"     # OTLP gRPC — сюда FastAPI отправляет трейсы
+      - "16686:16686"
+      - "4317:4317"
+    volumes:
+      - jaegerdata:/data
+    networks:
+      - backend
 
-  # ── Prometheus — сбор метрик ────────────────────────────────────────
-  # Prometheus сам ходит к приложению и "скрейпит" (scrape) метрики каждые N секунд.
-  # Метрики — числа: сколько запросов, как долго, сколько ошибок.
   prometheus:
     image: prom/prometheus:v2.53.0
     ports:
-      - "9090:9090"   # Prometheus UI: http://localhost:9090
+      - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      # Именованный volume — Prometheus хранит данные между перезапусками
       - prometheusdata:/prometheus
+    networks:
+      - backend
 
-  # ── Grafana — визуализация ──────────────────────────────────────────
-  # Grafana читает данные из Prometheus и Jaeger и рисует красивые дашборды.
-  # Prometheus → числовые графики (латентность, RPS, ошибки)
-  # Jaeger → трейсы (временная шкала конкретного запроса)
   grafana:
     image: grafana/grafana:11.1.0
     ports:
-      - "3000:3000"   # Grafana UI: http://localhost:3000 (admin/admin по умолчанию)
+      - "3000:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
-      # Grafana хранит дашборды и настройки между перезапусками
       - grafanadata:/var/lib/grafana
+    networks:
+      - backend
+
+  loki:
+    image: grafana/loki:2.9.0
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - lokidata:/loki
+    networks:
+      - backend
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+    command: -config.file=/etc/promtail/config.yaml
     depends_on:
-      - prometheus
-      - jaeger
+      - loki
+    networks:
+      - backend
 
 volumes:
   pgdata:
   redisdata:
-  prometheusdata:   # данные Prometheus (не теряются при docker compose restart)
-  grafanadata:      # дашборды и datasources Grafana
+  rabbitmqdata:
+  prometheusdata:
+  grafanadata:
+  jaegerdata:
+  lokidata:
+
+networks:
+  backend:
+    driver: bridge

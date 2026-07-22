@@ -28,17 +28,39 @@
 - [x] Create comment schema, repository, service and CRUD endpoints
 - [x] Nest comments under /tasks/{task_id}/comments
 
-## In Progress
-
 ### File Attachments
 
-- [ ] Create attachment model and migration
-- [ ] Implement file upload to S3
-- [ ] Store file metadata in DB (key, filename, content_type, size)
-- [ ] Return public URL via S3_PUBLIC_URL
-- [ ] Add delete attachment endpoint
+- [x] Create attachment model and migration
+- [x] Implement file upload to S3
+- [x] Store file metadata in DB (key, filename, content_type, size)
+- [x] Return public URL via S3_PUBLIC_URL
+- [x] Add delete attachment endpoint
+
+### Microservices Migration
+
+- [x] Set up gateway as standalone service with RabbitMQ RPC proxy
+- [x] Set up user_service as standalone RabbitMQ consumer
+- [x] Set up shared library (broker queues, exchanges, exceptions)
+- [x] Implement sign_up, sign_in, refresh via RabbitMQ RPC
+- [x] Implement JWT verification in gateway (RS256, public key only)
+- [x] Implement user profile endpoints (GET /users/me, PUT /users/me, DELETE /users/me)
+- [x] Configure Docker Compose with healthchecks and migration service
+- [x] Set up Alembic autogenerate with SQLAlchemy models in user_service
+
+## In Progress
+
+### task_service
+
+- [ ] Set up task_service as standalone RabbitMQ consumer
+- [ ] Migrate tasks (CRUD, filtering, pagination, tags)
+- [ ] Migrate categories (CRUD, task_count)
+- [ ] Migrate tags (CRUD, per-user uniqueness)
+- [ ] Migrate comments (CRUD, nested under tasks)
+- [ ] Add task_service to Docker Compose
 
 ## Planned
 
 - [ ] Add task search
 - [ ] Write unit tests (target 80% coverage)
+- [ ] Add rate limiting in gateway
+- [ ] Add request_id tracing across services
