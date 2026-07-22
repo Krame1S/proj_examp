@@ -1,4 +1,5 @@
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,7 @@ from shared.metrics.tracing import TracingMiddleware
 
 from gateway.api.errors import register_error_handlers
 from gateway.api.v1.router import v1_router
+from gateway.api.v1.ws import redis_listener
 from gateway.broker.rpc_publisher import rpc_publisher
 from gateway.core.config import settings
 from gateway.core.security import load_public_key
@@ -31,16 +33,18 @@ async def lifespan(app: FastAPI):
         response_exchange_name=ResponseExchange.DEFAULT.value,
     )
 
+    listener_task = asyncio.create_task(redis_listener())
+
     yield
 
-    # ── Shutdown ─────────────────────────────────────
+    listener_task.cancel()
+    with suppress(asyncio.CancelledError):
+        await listener_task
+
     await rpc_publisher.close()
 
 
-app = FastAPI(
-    title=settings.APP_NAME,
-    lifespan=lifespan,
-)
+app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 
 register_error_handlers(app)
 

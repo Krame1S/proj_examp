@@ -35,7 +35,7 @@ class TokenExpiredError(AuthServiceError):
     default_message = "Token has expired"
 
 
-class InvalidTokenErrorError(AuthServiceError):
+class InvalidTokenError(AuthServiceError):
     status_code = 401
     error_code = "INVALID_TOKEN"
     default_message = "Token is invalid"

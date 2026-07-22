@@ -10,6 +10,7 @@ from gateway.api.v1.health import router as health_router
 from gateway.api.v1.tags import router as tags_router
 from gateway.api.v1.tasks import router as tasks_router
 from gateway.api.v1.users import router as users_router
+from gateway.api.v1.ws import router as ws_router
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -23,3 +24,4 @@ v1_router.include_router(comments_router)
 v1_router.include_router(attachments_router)
 v1_router.include_router(dashboard_router)
 v1_router.include_router(chats_router)
+v1_router.include_router(ws_router)
