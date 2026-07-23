@@ -48,14 +48,6 @@ app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 
 register_error_handlers(app)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 if settings.ENABLE_METRICS:
     app.add_middleware(MetricsMiddleware)
 
@@ -63,6 +55,14 @@ if settings.ENABLE_TRACING:
     app.add_middleware(TracingMiddleware)
 
 app.add_middleware(LoggingMiddleware)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(v1_router, prefix="/api")
 
