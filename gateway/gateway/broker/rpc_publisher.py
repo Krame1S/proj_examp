@@ -35,7 +35,7 @@ class RpcPublisher:
         logging.info("Starting consuming from queue: '%s'.", self.response_queue.name)
         return self
 
-    async def on_response(self, message: AbstractIncomingMessage) -> None:
+    def on_response(self, message: AbstractIncomingMessage) -> None:
         correlation_id = message.correlation_id
         if correlation_id is None:
             logging.warning("Received response without correlation_id")

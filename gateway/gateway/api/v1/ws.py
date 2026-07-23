@@ -25,11 +25,11 @@ class ConnectionManager:
         self.rooms: dict[str, set[WebSocket]] = {}
         self.queues: dict[WebSocket, asyncio.Queue[dict]] = {}
 
-    async def join(self, room_id: str, ws: WebSocket):
+    def join(self, room_id: str, ws: WebSocket):
         self.rooms.setdefault(room_id, set()).add(ws)
         self.queues[ws] = asyncio.Queue(maxsize=50)
 
-    async def leave(self, room_id: str, ws: WebSocket):
+    def leave(self, room_id: str, ws: WebSocket):
         self.rooms.get(room_id, set()).discard(ws)
         self.queues.pop(ws, None)
         if not self.rooms.get(room_id):

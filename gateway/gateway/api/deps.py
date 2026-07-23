@@ -10,7 +10,7 @@ from gateway.core.security import decode_access_token
 security_scheme = HTTPBearer()
 
 
-async def get_current_user_id(
+def get_current_user_id(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security_scheme)],
 ) -> int:
     return decode_access_token(credentials.credentials)

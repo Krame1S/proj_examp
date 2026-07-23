@@ -26,7 +26,7 @@ async def close_db_pool() -> None:
         _pool = None
 
 
-async def get_redis_client() -> redis.Redis:
+def get_redis_client() -> redis.Redis:
     global _redis  # noqa: PLW0603
     if _redis is None:
         _redis = redis.from_url(settings.REDIS_URL)
