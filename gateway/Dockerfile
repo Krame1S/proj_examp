@@ -2,7 +2,6 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# shared копируется через build context корня (context: . в docker-compose)
 COPY shared/ /app/shared/
 
 COPY gateway/pyproject.toml gateway/poetry.lock* ./
@@ -15,5 +14,8 @@ COPY gateway/ .
 COPY keys/ /app/keys/
 
 ENV PYTHONPATH="/app:/app/shared/src"
+
+RUN useradd --create-home --shell /bin/false appuser && chown -R appuser:appuser /app
+USER appuser
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -14,4 +14,7 @@ COPY attachment_service/ .
 
 ENV PYTHONPATH="/app:/app/shared/src"
 
+RUN useradd --create-home --shell /bin/false appuser && chown -R appuser:appuser /app
+USER appuser
+
 CMD ["python", "consumer_main.py"]
