@@ -4,9 +4,9 @@ WORKDIR /app
 
 COPY shared/ /app/shared/
 
-COPY attachment_service/pyproject.toml attachment_service/poetry.lock* ./
+COPY attachment_service/pyproject.toml attachment_service/poetry.lock ./
 
-RUN pip install poetry --no-cache-dir --only-binary :all: && \
+RUN pip install poetry==1.8.3 --no-cache-dir --only-binary :all: && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --without dev
 
