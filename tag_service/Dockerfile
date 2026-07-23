@@ -6,7 +6,7 @@ COPY shared/ /app/shared/
 
 COPY tag_service/pyproject.toml tag_service/poetry.lock* ./
 
-RUN pip install poetry --no-cache-dir && \
+RUN pip install poetry --no-cache-dir --only-binary :all: && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --without dev
 
