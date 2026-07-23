@@ -34,7 +34,7 @@ class UserProfile(BaseModel):
     id: int
     email: EmailStr
     is_active: bool
-    created_at: Optional[str]
+    created_at: Optional[str] = None
 
     @classmethod
     def from_db_row(cls, row: dict) -> "UserProfile":

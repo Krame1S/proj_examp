@@ -12,8 +12,8 @@ class CommentOut(BaseModel):
     content: str
     task_id: int
     owner_id: int
-    created_at: Optional[str]
-    updated_at: Optional[str]
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     @classmethod
     def from_db_row(cls, row: dict) -> "CommentOut":

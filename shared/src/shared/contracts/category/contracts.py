@@ -22,11 +22,11 @@ class CategoryListRequest(BaseModel):
 class CategoryOut(BaseModel):
     id: int
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
     created_by: int
     task_count: int = 0
-    created_at: Optional[str]
-    updated_at: Optional[str]
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     @classmethod
     def from_db_row(cls, row: dict) -> "CategoryOut":
