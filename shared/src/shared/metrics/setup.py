@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def setup_tracing(
-    service_name: str = "service", otlp_endpoint: str = "http://jaeger:4317"
+    service_name: str = "service", otlp_endpoint: str = "https://jaeger:4317"
 ) -> None:
     provider = TracerProvider(resource=Resource.create({SERVICE_NAME: service_name}))
     exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
