@@ -16,7 +16,6 @@ class CategoryUpdate(BaseModel):
 class CategoryListRequest(BaseModel):
     user_id: int
     limit: int = Field(100, ge=1, le=500)
-    parent_id: Optional[int] = None
 
 
 class CategoryOut(BaseModel):

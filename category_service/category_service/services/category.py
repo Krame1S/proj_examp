@@ -33,7 +33,6 @@ class CategoryService:
         self,
         owner_id: int,
         limit: int = 100,
-        parent_id: int | None = None,
     ) -> list[CategoryOut]:
         records = await self.repository.list_by_user_with_count(owner_id)
         categories = records[:limit]

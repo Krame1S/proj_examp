@@ -12,6 +12,8 @@ from chat_service.repository.chat_message import ChatMessageRepository
 from chat_service.repository.chat_request import ChatRequestRepository
 from chat_service.repository.user import UserRepository
 
+_UPDATE_STATUS_FAILED_MSG = "Failed to update request status"
+
 
 class ChatService:
     def __init__(
@@ -44,7 +46,7 @@ class ChatService:
             raise ChatRequestAlreadyExists
         record = await self.chat_request_repo.create(requester_id, user["id"])
         if record is None:
-            raise RuntimeError("Failed to create chat request")
+            raise RuntimeError(_UPDATE_STATUS_FAILED_MSG)
         return ChatRequestOut.from_db_row(record)
 
     async def list_requests(self, user_id: int, direction: str, status: str | None = None) -> list[ChatRequestOut]:
@@ -59,7 +61,7 @@ class ChatService:
             raise ChatRequestNotFound
         record = await self.chat_request_repo.update_status(request_id, "accepted")
         if record is None:
-            raise RuntimeError("Failed to update request status")
+            raise RuntimeError(_UPDATE_STATUS_FAILED_MSG)
         return ChatRequestOut.from_db_row(record)
 
     async def decline_request(self, request_id: int, user_id: int) -> ChatRequestOut:
@@ -70,7 +72,7 @@ class ChatService:
             raise ChatRequestNotFound
         record = await self.chat_request_repo.update_status(request_id, "declined")
         if record is None:
-            raise RuntimeError("Failed to update request status")
+            raise RuntimeError(_UPDATE_STATUS_FAILED_MSG)
         return ChatRequestOut.from_db_row(record)
 
     async def cancel_request(self, request_id: int, user_id: int) -> ChatRequestOut:
@@ -81,7 +83,7 @@ class ChatService:
             raise ChatRequestNotFound
         record = await self.chat_request_repo.update_status(request_id, "cancelled")
         if record is None:
-            raise RuntimeError("Failed to update request status")
+            raise RuntimeError(_UPDATE_STATUS_FAILED_MSG)
         return ChatRequestOut.from_db_row(record)
 
     async def get_room(self, room_id: int, user_id: int) -> ChatRequestOut:

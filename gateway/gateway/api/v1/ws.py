@@ -101,7 +101,7 @@ async def _authorize_room(ws: WebSocket, room_id: str, user_id: int) -> dict | N
     (i.e. their chat request was accepted) before we accept the socket."""
     try:
         room = await rpc_call(ConsumerQueue.CHAT_ROOM_GET, {"room_id": int(room_id), "user_id": user_id})
-    except (ValueError, Exception):
+    except Exception:
         await ws.close(code=1008)
         return None
     if "error" in room:
@@ -179,7 +179,7 @@ async def room_ws(ws: WebSocket, room_id: str):
         while True:
             try:
                 msg = await ws.receive_json()
-            except (json.JSONDecodeError, ValueError):
+            except json.JSONDecodeError:
                 await manager.send_local(ws, {"type": "error", "detail": "Invalid JSON"})
                 continue
             await _handle_incoming_message(ws, room_id, user_id, msg)
