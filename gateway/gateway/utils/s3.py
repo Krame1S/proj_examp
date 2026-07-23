@@ -47,7 +47,7 @@ def generate_key(task_id: int, filename: str) -> str:
 
 def get_public_url(key: str) -> str:
     if MOCK_S3:
-        return f"http://mock-s3.local/files/{key}"
+        return f"https://mock-s3.local/files/{key}"
     return f"{settings.S3_PUBLIC_URL.rstrip('/')}/{key}"
 
 

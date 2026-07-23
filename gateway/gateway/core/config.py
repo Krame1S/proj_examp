@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # ── OpenTelemetry Tracing ────────────────────────────
     ENABLE_TRACING: bool = False
     OTEL_SERVICE_NAME: str = "my-backend"
-    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://jaeger:4317"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "https://jaeger:4317"
     JWT_ALGORITHM: str = "RS256"
     JWT_PUBLIC_KEY_PATH: str = "/app/keys/public.pem"
 
